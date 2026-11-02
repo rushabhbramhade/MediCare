@@ -40,8 +40,9 @@ is an error rather than a bypass.
 - Helmet sets security headers on the API; `next.config.ts` sets them for the web app.
 - CORS is an explicit origin list from `API_CORS_ORIGINS`, credentials enabled, limited
   methods and headers.
-- Rate limiting applies globally (`RATE_LIMIT_*`), with a stricter auth limit reserved
-  for the login surface.
+- Rate limiting applies globally (`RATE_LIMIT_*`). API auth routes use
+  `AUTH_RATE_LIMIT_LIMIT` via `AuthRateLimitGuard`; the web OTP send/verify server
+  actions apply the same limit per phone and IP. See [authentication.md](authentication.md).
 - The browser only ever holds the Supabase anon key and the user session.
 
 ## Secrets

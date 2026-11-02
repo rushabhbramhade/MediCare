@@ -30,12 +30,19 @@ describe("loadApiEnv", () => {
       /At least one allowed origin/,
     );
   });
+
+  it("defaults the auth-specific rate limit and requires a positive value", () => {
+    expect(loadApiEnv(apiBase).AUTH_RATE_LIMIT_LIMIT).toBe(10);
+    expect(loadApiEnv({ ...apiBase, AUTH_RATE_LIMIT_LIMIT: "25" }).AUTH_RATE_LIMIT_LIMIT).toBe(25);
+    expect(() => loadApiEnv({ ...apiBase, AUTH_RATE_LIMIT_LIMIT: "0" })).toThrow(
+      /AUTH_RATE_LIMIT_LIMIT/,
+    );
+  });
 });
 
 describe("loadWorkerEnv", () => {
-  it("accepts an empty internal token", () => {
+  it("accepts an empty internal token without a database URL", () => {
     const env = loadWorkerEnv({
-      DATABASE_URL: apiBase.DATABASE_URL,
       REDIS_URL: apiBase.REDIS_URL,
       INTERNAL_SERVICE_TOKEN: "",
     });
@@ -46,7 +53,6 @@ describe("loadWorkerEnv", () => {
   it("rejects a token shorter than 16 characters", () => {
     expect(() =>
       loadWorkerEnv({
-        DATABASE_URL: apiBase.DATABASE_URL,
         REDIS_URL: apiBase.REDIS_URL,
         INTERNAL_SERVICE_TOKEN: "short",
       }),

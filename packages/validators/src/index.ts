@@ -1,6 +1,7 @@
 import {
   ACCESSIBILITY_PREFERENCES,
   GENDERS,
+  HOSPITAL_TYPES,
   SUPPORTED_LANGUAGES,
   type SupportedLanguage,
 } from "@medicare/types";
@@ -159,10 +160,11 @@ export const hospitalSearchSchema = z
     radiusKm: z.coerce
       .number()
       .min(0.5, "Radius must be at least 0.5 km")
-      .max(50, "Radius must be at most 50 km")
-      .default(10),
+      .max(15, "Radius must be at most 15 km")
+      .default(5),
     specialty: z.string().trim().min(1).max(80).optional(),
     emergencyOnly: booleanQueryParam,
+    hospitalType: z.enum(HOSPITAL_TYPES).optional(),
     page: z.coerce.number().int().min(1).default(1),
     pageSize: z.coerce.number().int().min(1).max(50).default(20),
   })

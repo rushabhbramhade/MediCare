@@ -96,6 +96,21 @@ integration("Milestone 2 database integration", () => {
     expect(serialisedMetadata).not.toContain("+919876543210");
   });
 
+  it("keeps one profile row when the first save is repeated", async () => {
+    const first = await patients.getProfile({ id: userA, role: "patient" });
+    const second = await patients.putProfile(
+      { id: userA, role: "patient", phone: "+919876543210" },
+      { fullName: "Integration Asha Duplicate" },
+    );
+
+    expect(second.id).toBe(first.id);
+    const rows = await database.query<{ count: string }>(
+      "SELECT count(*) FROM app.patient_profiles WHERE user_id = $1",
+      [userA],
+    );
+    expect(rows.rows[0]?.count).toBe("1");
+  });
+
   it("isolates one patient from another", async () => {
     await expect(patients.getProfile({ id: userB, role: "patient" })).rejects.toMatchObject({
       response: { code: "profile_not_found" },

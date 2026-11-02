@@ -22,5 +22,4 @@ pnpm --filter @medicare/document-worker dev     # requires REDIS_URL
 pnpm --filter @medicare/document-worker build
 ```
 
-Required env: `REDIS_URL`, optional `QUEUE_PREFIX`, `LOG_LEVEL`, `DATABASE_URL`.
-See `.env.example`.
+Required env: `REDIS_URL`; optional `QUEUE_PREFIX`, `LOG_LEVEL`. See `.env.example`.

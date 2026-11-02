@@ -66,8 +66,12 @@ describe("HospitalsService with no provider", () => {
       meta: {
         source: null,
         liveAvailabilitySupported: false,
-        capabilities: { specialtyFilter: false, emergencyFilter: false },
-        radiusKm: 10,
+        capabilities: {
+          specialtyFilter: false,
+          emergencyFilter: false,
+          typeFilter: false,
+        },
+        radiusKm: 5,
         page: 1,
         pageSize: 20,
         total: 0,
@@ -119,13 +123,15 @@ describe("HospitalsService with a configured provider", () => {
       pageSize: 10,
       total: 1,
       maxStalenessHours: 24,
-      capabilities: { specialtyFilter: true, emergencyFilter: true },
+      capabilities: { specialtyFilter: true, emergencyFilter: true, typeFilter: true },
     });
 
     const rowQueryParams = database.query.mock.calls[0]?.[1];
-    expect(rowQueryParams).toEqual([72.8777, 19.076, 5_000, "cardiology", true, 10, 10]);
+    expect(rowQueryParams).toEqual([
+      72.8777, 19.076, 5_000, "cardiology", true, null, 10, 10,
+    ]);
     const countParams = database.query.mock.calls[1]?.[1];
-    expect(countParams).toEqual([72.8777, 19.076, 5_000, "cardiology", true]);
+    expect(countParams).toEqual([72.8777, 19.076, 5_000, "cardiology", true, null]);
   });
 
   it("treats a null specialty as no filter", async () => {
@@ -136,6 +142,7 @@ describe("HospitalsService with a configured provider", () => {
     await service.search({ latitude: 19.076, longitude: 72.8777 });
     expect(database.query.mock.calls[0]?.[1]?.[3]).toBeNull();
     expect(database.query.mock.calls[0]?.[1]?.[4]).toBe(false);
+    expect(database.query.mock.calls[0]?.[1]?.[5]).toBeNull();
   });
 
   it("fails honestly when the database is unreachable", async () => {

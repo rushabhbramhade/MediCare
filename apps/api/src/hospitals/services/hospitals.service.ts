@@ -2,6 +2,7 @@ import type {
   HospitalSearchQuery,
   HospitalSearchResponse,
   HospitalSummary,
+  HospitalType,
   HospitalVerificationStatus,
 } from "@medicare/types";
 import { Inject, Injectable, ServiceUnavailableException } from "@nestjs/common";
@@ -22,10 +23,13 @@ interface HospitalRow {
   longitude: number;
   distance_km: number;
   has_emergency: boolean | null;
+  phone: string | null;
+  hospital_type: HospitalType | null;
   specialties: string[];
   verification_status: HospitalVerificationStatus;
   provider: string;
   last_synced_at: Date | string;
+  is_active: boolean;
 }
 
 function toIso(value: Date | string): string {
@@ -62,6 +66,8 @@ export function mapHospitalRow(
     longitude: row.longitude,
     distanceKm: Math.round(row.distance_km * 100) / 100,
     hasEmergency: row.has_emergency,
+    phone: row.phone,
+    hospitalType: row.hospital_type,
     specialties: row.specialties,
     verificationStatus: row.verification_status,
     source: row.provider,
@@ -81,7 +87,7 @@ export class HospitalsService {
 
   async search(query: HospitalSearchQuery): Promise<HospitalSearchResponse> {
     const descriptor = this.provider.describe();
-    const radiusKm = query.radiusKm ?? 10;
+    const radiusKm = query.radiusKm ?? 5;
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 20;
 
@@ -91,6 +97,7 @@ export class HospitalsService {
       capabilities: {
         specialtyFilter: descriptor.capabilities.specialtyFilter,
         emergencyFilter: descriptor.capabilities.emergencyFilter,
+        typeFilter: descriptor.capabilities.specialtyFilter,
       },
       radiusKm,
       page,
@@ -106,11 +113,13 @@ export class HospitalsService {
 
     const specialty = query.specialty?.trim() || null;
     const emergencyOnly = query.emergencyOnly === true;
+    const hospitalType = query.hospitalType ?? null;
     const radiusMeters = radiusKm * 1_000;
     const offset = (page - 1) * pageSize;
 
     const filterSql = `
-      WHERE verification_status IN ('verified', 'stale')
+      WHERE is_active = true
+        AND verification_status IN ('verified', 'stale')
         AND ST_DWithin(
           location,
           ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
@@ -124,6 +133,9 @@ export class HospitalsService {
           )
         )
         AND ($5::boolean = false OR has_emergency IS TRUE)
+        AND (
+          $6::text IS NULL OR hospital_type = $6
+        )
     `;
 
     try {
@@ -138,11 +150,12 @@ export class HospitalsService {
                 location,
                 ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography
               ) / 1000.0 AS distance_km,
-              has_emergency, specialties, verification_status, provider, last_synced_at
+              has_emergency, phone, hospital_type, specialties,
+              verification_status, provider, last_synced_at, is_active
             FROM app.hospitals
             ${filterSql}
             ORDER BY distance_km ASC, id ASC
-            LIMIT $6 OFFSET $7
+            LIMIT $7 OFFSET $8
           `,
           [
             query.longitude,
@@ -150,13 +163,14 @@ export class HospitalsService {
             radiusMeters,
             specialty,
             emergencyOnly,
+            hospitalType,
             pageSize,
             offset,
           ],
         ),
         this.database.query<{ total: string }>(
           `SELECT count(*)::text AS total FROM app.hospitals ${filterSql}`,
-          [query.longitude, query.latitude, radiusMeters, specialty, emergencyOnly],
+          [query.longitude, query.latitude, radiusMeters, specialty, emergencyOnly, hospitalType],
         ),
       ]);
 

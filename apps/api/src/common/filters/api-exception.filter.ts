@@ -48,11 +48,19 @@ export class ApiExceptionFilter implements ExceptionFilter {
     // interceptor. Record them here exactly once; controller failures were
     // already recorded by the interceptor.
     if (
-      (status === HttpStatus.UNAUTHORIZED || status === HttpStatus.FORBIDDEN) &&
+      (status === HttpStatus.UNAUTHORIZED ||
+        status === HttpStatus.FORBIDDEN ||
+        status === HttpStatus.TOO_MANY_REQUESTS) &&
       !request.auditIntercepted
     ) {
+      const action =
+        status === HttpStatus.UNAUTHORIZED
+          ? "auth.unauthenticated"
+          : status === HttpStatus.FORBIDDEN
+            ? "authz.denied"
+            : "auth.rate_limited";
       void this.audit.record({
-        action: status === HttpStatus.UNAUTHORIZED ? "auth.unauthenticated" : "authz.denied",
+        action,
         outcome: "failure",
         resourceType: "auth",
         resourceId: path,

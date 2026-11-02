@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { loginSchema, otpCodeSchema } from "@medicare/validators";
@@ -23,6 +23,17 @@ type TokenValues = z.infer<typeof tokenSchema>;
 export function PhoneOtpForm({ mode }: { mode: "login" | "register" }) {
   const [phone, setPhone] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const coolingDown = cooldownSeconds > 0;
+
+  useEffect(() => {
+    if (!coolingDown) return;
+    const timer = setInterval(
+      () => setCooldownSeconds((seconds) => Math.max(0, seconds - 1)),
+      1000,
+    );
+    return () => clearInterval(timer);
+  }, [coolingDown]);
 
   const phoneForm = useForm<PhoneValues>({
     resolver: zodResolver(loginSchema),
@@ -50,6 +61,7 @@ export function PhoneOtpForm({ mode }: { mode: "login" | "register" }) {
       return;
     }
     setPhone(result.phone);
+    setCooldownSeconds(30);
     tokenForm.reset();
   });
 
@@ -119,11 +131,11 @@ export function PhoneOtpForm({ mode }: { mode: "login" | "register" }) {
           </button>
           <button
             type="button"
-            disabled={phoneForm.formState.isSubmitting}
+            disabled={phoneForm.formState.isSubmitting || coolingDown}
             onClick={() => void submitPhone()}
             className="rounded-md py-2 font-medium text-muted-foreground hover:text-foreground disabled:opacity-60"
           >
-            Resend code
+            {coolingDown ? `Resend code in ${cooldownSeconds}s` : "Resend code"}
           </button>
         </div>
         <p className="text-xs text-muted-foreground">
