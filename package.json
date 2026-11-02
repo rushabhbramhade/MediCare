@@ -1,0 +1,41 @@
+{
+  "name": "medicare",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Medicare — healthcare navigation and assistance platform for India",
+  "license": "MIT",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=22.12.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev --filter=./apps/*",
+    "dev:web": "turbo run dev --filter=@medicare/web",
+    "dev:api": "turbo run dev --filter=@medicare/api",
+    "dev:ai": "cd apps/ai && uv run uvicorn app.main:app --reload --port 8000",
+    "dev:workers": "turbo run dev --filter=./workers/*",
+    "build": "turbo run build",
+    "lint": "eslint . && pnpm --filter @medicare/web lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:up": "docker compose -f infrastructure/compose/docker-compose.yml up -d",
+    "db:down": "docker compose -f infrastructure/compose/docker-compose.yml down",
+    "db:logs": "docker compose -f infrastructure/compose/docker-compose.yml logs -f",
+    "db:migrate": "node --env-file-if-exists=.env infrastructure/scripts/migrate.mjs",
+    "ai:sync": "cd apps/ai && uv sync --all-extras",
+    "ai:lint": "cd apps/ai && uv run ruff check .",
+    "ai:test": "cd apps/ai && uv run pytest",
+    "check:secrets": "node infrastructure/scripts/check-secrets.mjs"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "pg": "^8.23.1",
+    "prettier": "^3.9.10",
+    "turbo": "^2.11.10",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.1"
+  }
+}

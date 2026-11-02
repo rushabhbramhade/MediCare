@@ -1,0 +1,44 @@
+name: Feature request
+description: Propose a capability or integration
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Who is under what pressure, and what can they not do today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Smallest useful version
+      description: What is the one job this must do? What can wait?
+    validations:
+      required: true
+  - type: dropdown
+    id: data
+    attributes:
+      label: Data source
+      description: Fabricated data is not acceptable. Where will real data come from?
+      options:
+        - No external data (computed or user-provided)
+        - Licensed provider/integration (contract required)
+        - Public government or open data
+        - Not decided
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety review
+      options:
+        - label: This can produce clinical guidance, dosing or diagnosis language
+        - label: This touches patient records or consent
+        - label: This adds a new external provider
+        - label: This needs clinical or legal review before launch
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
