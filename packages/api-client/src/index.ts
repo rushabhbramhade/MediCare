@@ -1,6 +1,7 @@
 import {
   API_ROUTES,
   type HealthResponse,
+  type HospitalAvailabilityApiResponse,
   type MeResponse,
   type PatientProfileResponse,
   type ReadinessResponse,
@@ -115,6 +116,10 @@ export function createApiClient(options: ApiClientOptions) {
     },
     searchHospitals: (query: HospitalSearchQuery) =>
       request<HospitalSearchResponse>(`${API_ROUTES.hospitals}?${toQueryString(query)}`),
+    hospitalAvailability: {
+      get: (hospitalId: string) =>
+        request<HospitalAvailabilityApiResponse>(API_ROUTES.hospitalAvailability(hospitalId)),
+    },
   };
 }
 

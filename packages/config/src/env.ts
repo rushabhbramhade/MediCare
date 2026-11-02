@@ -41,6 +41,7 @@ export const apiEnvSchema = runtimeEnvSchema
     JWT_JWKS_URL: z.url(),
     RATE_LIMIT_TTL_MS: z.coerce.number().int().min(1000).default(60_000),
     RATE_LIMIT_LIMIT: z.coerce.number().int().min(1).default(100),
+    AUTH_RATE_LIMIT_LIMIT: z.coerce.number().int().min(1).max(1000).default(10),
     INTERNAL_SERVICE_TOKEN: optionalSecret(16),
     ENCRYPTION_KEY: optionalSecret(32),
     HOSPITAL_PROVIDER: z.string().min(1).max(64).default("disabled"),
@@ -66,7 +67,6 @@ export const apiEnvSchema = runtimeEnvSchema
   });
 
 export const workerEnvSchema = runtimeEnvSchema.extend({
-  DATABASE_URL: z.url(),
   REDIS_URL: z.url(),
   QUEUE_PREFIX: z.string().min(1).default("medicare"),
   INTERNAL_SERVICE_TOKEN: optionalSecret(16),

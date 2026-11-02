@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, SecretStr, field_validator, model_validator
+from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,10 +12,15 @@ class Settings(BaseSettings):
         env_file=("../../.env", ".env"),
         env_file_encoding="utf-8",
         case_sensitive=False,
+        populate_by_name=True,
         extra="ignore",
     )
 
-    environment: Literal["development", "test", "production"] = "development"
+    # NODE_ENV is the shared runtime flag; ENVIRONMENT is an explicit override.
+    environment: Literal["development", "test", "production"] = Field(
+        default="development",
+        validation_alias=AliasChoices("ENVIRONMENT", "NODE_ENV"),
+    )
     log_level: str = "info"
 
     ai_provider: Literal["disabled", "openai-compatible"] = "disabled"

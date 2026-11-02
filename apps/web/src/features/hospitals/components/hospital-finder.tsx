@@ -17,7 +17,7 @@ import { formatDateTime } from "@/lib/format";
 import { locationErrorMessage } from "@/lib/location";
 import { parseManualCoordinates, toHospitalViewState } from "../hospital-view-state";
 
-const RADIUS_OPTIONS = [1, 5, 10, 25, 50];
+const RADIUS_OPTIONS = [1, 5, 10, 15];
 const PAGE_SIZE = 10;
 
 const selectClassName =
@@ -35,7 +35,7 @@ export function HospitalFinder() {
   const [manualLatitude, setManualLatitude] = useState("");
   const [manualLongitude, setManualLongitude] = useState("");
   const [manualError, setManualError] = useState<string | null>(null);
-  const [radiusKm, setRadiusKm] = useState(10);
+  const [radiusKm, setRadiusKm] = useState(5);
   const [specialty, setSpecialty] = useState("");
   const [emergencyOnly, setEmergencyOnly] = useState(false);
   const [page, setPage] = useState(1);

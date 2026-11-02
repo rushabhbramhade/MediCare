@@ -19,6 +19,8 @@ const hospital: HospitalSummary = {
   longitude: 72.8777,
   distanceKm: 1.2,
   hasEmergency: true,
+  phone: null,
+  hospitalType: null,
   specialties: ["cardiology"],
   verificationStatus: "verified",
   source: "licensed-test",
@@ -30,7 +32,7 @@ const hospital: HospitalSummary = {
 const meta: HospitalSearchResponse["meta"] = {
   source: "licensed-test",
   liveAvailabilitySupported: false,
-  capabilities: { specialtyFilter: true, emergencyFilter: true },
+  capabilities: { specialtyFilter: true, emergencyFilter: true, typeFilter: true },
   radiusKm: 10,
   page: 1,
   pageSize: 10,

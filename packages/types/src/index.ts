@@ -4,16 +4,22 @@
  * `user_metadata` (user-writable).
  */
 export type Role =
-  "patient" | "caregiver" | "doctor" | "hospital" | "pharmacy" | "ambulance" | "admin";
+  | "patient"
+  | "caregiver"
+  | "doctor"
+  | "hospital_admin"
+  | "ambulance_provider"
+  | "pharmacy_admin"
+  | "platform_admin";
 
 export const ROLES: readonly Role[] = [
   "patient",
   "caregiver",
   "doctor",
-  "hospital",
-  "pharmacy",
-  "ambulance",
-  "admin",
+  "hospital_admin",
+  "ambulance_provider",
+  "pharmacy_admin",
+  "platform_admin",
 ] as const;
 
 export interface AuthUser {
@@ -84,6 +90,16 @@ export type HospitalVerificationStatus = (typeof HOSPITAL_VERIFICATION_STATUSES)
 
 export type BedAvailability = "unknown";
 
+export const HOSPITAL_TYPES = [
+  "government",
+  "private",
+  "charitable",
+  "multi_specialty",
+  "clinic",
+  "other",
+] as const;
+export type HospitalType = (typeof HOSPITAL_TYPES)[number];
+
 export interface HospitalSummary {
   id: string;
   name: string;
@@ -97,6 +113,9 @@ export interface HospitalSummary {
   distanceKm: number;
   /** NULL means the provider did not verify emergency capability. */
   hasEmergency: boolean | null;
+  /** Verified contact phone in E.164 format, populated only from a verified source. */
+  phone: string | null;
+  hospitalType: HospitalType | null;
   specialties: string[];
   verificationStatus: HospitalVerificationStatus;
   source: string;
@@ -104,6 +123,51 @@ export interface HospitalSummary {
   isStale: boolean;
   /** Never a number until a licensed live source exists. */
   bedAvailability: BedAvailability;
+}
+
+export const AVAILABILITY_STATUSES = [
+  "AVAILABLE",
+  "LIMITED",
+  "FULL",
+  "UNKNOWN",
+  "STALE",
+] as const;
+export type AvailabilityStatus = (typeof AVAILABILITY_STATUSES)[number];
+
+export const AVAILABILITY_VERIFICATION_STATUSES = [
+  "verified",
+  "unverified",
+  "stale",
+] as const;
+export type AvailabilityVerificationStatus = (typeof AVAILABILITY_VERIFICATION_STATUSES)[number];
+
+export const RESOURCE_TYPES = [
+  "general_bed",
+  "icu_bed",
+  "oxygen",
+  "ventilator",
+  "ambulance",
+] as const;
+export type ResourceType = (typeof RESOURCE_TYPES)[number];
+
+export interface HospitalAvailability {
+  id: string;
+  hospitalId: string;
+  resourceType: ResourceType;
+  status: AvailabilityStatus;
+  quantity: number | null;
+  source: string;
+  reportedAt: IsoDateTimeString;
+  verifiedAt: IsoDateTimeString | null;
+  verificationStatus: AvailabilityVerificationStatus;
+  createdAt: IsoDateTimeString;
+  updatedAt: IsoDateTimeString;
+}
+
+export interface HospitalAvailabilityQuery {
+  hospitalId?: string;
+  resourceType?: ResourceType;
+  status?: AvailabilityStatus;
 }
 
 export type HospitalSearchStatus = "OK" | "NO_DATA_SOURCE_CONFIGURED";
@@ -114,6 +178,7 @@ export interface HospitalSearchMeta {
   capabilities: {
     specialtyFilter: boolean;
     emergencyFilter: boolean;
+    typeFilter: boolean;
   };
   radiusKm: number;
   page: number;
@@ -136,6 +201,7 @@ export interface HospitalSearchQuery {
   radiusKm?: number;
   specialty?: string;
   emergencyOnly?: boolean;
+  hospitalType?: HospitalType;
   page?: number;
   pageSize?: number;
 }
