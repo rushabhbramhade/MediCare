@@ -16,6 +16,40 @@
 - Health endpoints (`GET /v1/health`, `GET /v1/health/ready`) are public and contain no
   patient data.
 - `GET /v1/auth/me` returns the verified identity and application role.
+- `GET|PUT|PATCH /v1/patients/me` requires the `patient` role and acts only on the
+  verified subject. Request bodies never carry a user id or phone number.
+- `GET /v1/hospitals` requires a verified token (any role) and is read-only.
+
+### Patient profile
+
+| Method | Path              | Body / result                                        |
+| ------ | ----------------- | ---------------------------------------------------- |
+| GET    | `/v1/patients/me` | `{ profile }`; `404 profile_not_found` when absent   |
+| PUT    | `/v1/patients/me` | full profile; creates or replaces; `{ profile }`     |
+| PATCH  | `/v1/patients/me` | at least one field; `{ profile }`; `404` when absent |
+
+- `fullName` is required on `PUT`; `preferredLanguage` defaults to `en` and
+  `accessibilityPreferences` to `[]`.
+- `phone` is read-only and comes from the verified JWT claim. `id` is the internal
+  profile id; `user_id` is never exposed.
+- Bodies are strict: unknown fields, `phone` and `userId` are rejected with
+  `validation_error`.
+- Reads are throttled at 60/min; writes at 30/min.
+
+### Hospital search
+
+`GET /v1/hospitals?latitude=&longitude=&radiusKm=&specialty=&emergencyOnly=&page=&pageSize=`
+
+- `latitude`/`longitude` required; `radiusKm` 0.5–50 (default 10); `pageSize` 1–50
+  (default 20).
+- `specialty` is a case-insensitive exact match; `emergencyOnly=true` keeps only rows
+  the source marked as emergency-capable.
+- `status` is `OK` or `NO_DATA_SOURCE_CONFIGURED`. The no-source response has
+  `data: []` and `meta.source: null`; it is not an error and must not be rendered as
+  zero hospitals.
+- Every result has `source`, `lastSyncedAt`, `isStale` and
+  `bedAvailability: "unknown"`. `hasEmergency: null` means unknown, not false.
+- Database failure returns `503 hospital_search_unavailable`.
 
 ## Errors
 
@@ -52,8 +86,10 @@ One envelope for every failure:
 
 ## Pagination
 
-`Paginated<T>` exists in `@medicare/types` (`items`, `nextCursor`). Cursor pagination is
-the default choice; no paginated endpoint is implemented yet.
+`Paginated<T>` exists in `@medicare/types` (`items`, `nextCursor`). Hospital search is
+the first paginated endpoint and uses offset pagination (`page`, `pageSize`, `total`)
+because results are ordered by distance. Cursor pagination remains the default for
+future feeds.
 
 ## Idempotency
 
@@ -78,5 +114,9 @@ per-process and in-memory; a multi-instance deployment needs a shared store.
 
 - Log request id, method, route, status and duration.
 - Never log tokens, phone numbers, report text, prompts or model responses.
-- Mutating authenticated requests are audit-logged; persistence to `app.audit_logs` is
-  pending.
+- Authenticated requests are audited to `app.audit_logs` with actor, action, outcome,
+  status and sanitised metadata. Bodies and query strings are excluded.
+- Profile writes are fail-closed: the audit row shares the data transaction. Reads and
+  generic request events are fail-open: a failed audit write is logged and the request
+  continues. See [ADR-0005](../architecture/decisions/0005-audit-persistence-and-failure-policy.md).
+- There is no audit read API. Patients cannot query, edit or delete audit history.

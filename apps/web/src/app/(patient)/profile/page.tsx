@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
-import { StatusNote } from "@/components/shared/status-note";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { signOutAction } from "@/features/auth/actions";
+import { ProfileForm } from "@/features/patients/components/profile-form";
 import { formatPhoneDisplay } from "@/lib/format";
 import { getSessionSummary } from "@/lib/session";
 import { cn } from "@/lib/utils";
@@ -26,8 +26,17 @@ export default async function ProfilePage() {
     <div className="space-y-6">
       <PageHeader
         title="Profile"
-        description="The account details Medicare received from Supabase Auth."
+        description="Your details and accessibility preferences. Only you can read or change this profile."
       />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Your details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ProfileForm verifiedPhone={session.phone} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -44,11 +53,6 @@ export default async function ProfilePage() {
           </dl>
         </CardContent>
       </Card>
-
-      <StatusNote variant="info" title="Profile editing is not enabled">
-        Adding your name, date of birth, emergency contacts and consent preferences is the next
-        patient-module milestone.
-      </StatusNote>
 
       <form action={signOutAction}>
         <button type="submit" className={cn(buttonVariants({ variant: "outline" }))}>

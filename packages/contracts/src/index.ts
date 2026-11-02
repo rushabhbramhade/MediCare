@@ -1,4 +1,4 @@
-import type { AuthUser, Paginated } from "@medicare/types";
+import type { AuthUser, HospitalSearchResponse, Paginated, PatientProfile } from "@medicare/types";
 
 export const API_VERSION = "v1" as const;
 
@@ -7,6 +7,8 @@ export const API_ROUTES = {
   health: "/v1/health",
   readiness: "/v1/health/ready",
   me: "/v1/auth/me",
+  patientProfile: "/v1/patients/me",
+  hospitals: "/v1/hospitals",
 } as const;
 
 export interface HealthResponse {
@@ -28,3 +30,9 @@ export interface MeResponse {
 export interface PaginatedResponse<T> {
   data: Paginated<T>;
 }
+
+export interface PatientProfileResponse {
+  profile: PatientProfile;
+}
+
+export type HospitalSearchApiResponse = HospitalSearchResponse;

@@ -1,27 +1,49 @@
 # Audit
 
-**Status:** Foundation implemented (log stream); persistence deferred
+**Status:** Implemented — persistent append-only trail
 
 ## Responsibility
 
-Records who accessed what, when and with which consent. Currently emits structured `audit_event` log lines through `AuditService`.
+Record who did what, when, with which outcome and request id. Events go to structured
+logs and to `app.audit_logs`. There is no patient-facing read API.
 
 ## Data owned
 
-- Structured log events today
-- `app.audit_events` (future append-only table)
+- `app.audit_logs` — actor, role, action, resource, request id, outcome, status,
+  duration, source and sanitised metadata
+- No actor foreign key: audit rows survive account deletion
 
-## Planned HTTP surface
+## Entry points
 
-- No public HTTP surface
-- Admin read API deferred
+- `PatientsService` writes rich `patient_profile.created`, `.updated` and `.read` events.
+- `AuditLogInterceptor` writes one generic success or failure event per authenticated
+  request. Success is skipped for routes marked `@ServiceAudited()` so a service event
+  is not duplicated; failures are still recorded there because a rolled-back mutation
+  has no persisted service event.
+- `ApiExceptionFilter` records guard-level `401`/`403` events once, because guards run
+  before interceptors.
+
+## Failure policy
+
+| Path                                    | Policy      | Behaviour                                               |
+| --------------------------------------- | ----------- | ------------------------------------------------------- |
+| Profile create/update (`recordWithin`)  | fail-closed | Audit insert shares the transaction; failure rolls back |
+| Profile read and generic request events | fail-open   | Failure is logged; the request continues                |
+
+Fail-open is a deliberate availability trade-off, not a claim that every read is
+audited. A monitoring alert on `audit_persist_failed` is still required.
 
 ## Security and safety notes
 
-Never log request bodies, query strings, file contents or AI prompts. A log stream is not a compliance-grade audit trail; persistent storage, immutability and retention are required before clinical use.
+- `sanitizeAuditMetadata` drops keys matching password, OTP, token, secret, API key,
+  authorization, cookie, report, document, content, phone, email and address. It caps
+  strings at 256 characters, keys at 20 and depth at 2.
+- Request bodies and query strings are never recorded.
+- Database triggers reject `UPDATE`, `DELETE` and `TRUNCATE` on `app.audit_logs`,
+  including for the owner connection. RLS stays default-deny for other roles.
+- A database superuser can still drop the trigger; this is tamper-evident only against
+  ordinary application access, not a write-once storage guarantee.
+- No retention, export or admin read API exists yet.
 
-## Next step
-
-Add the append-only audit migration and a retention policy; ship to write-once storage or an audited warehouse.
-
-See [docs/architecture](../../../../docs/architecture/system-overview.md) and the API conventions in [docs/api](../../../../docs/api/api-conventions.md).
+See [ADR-0005](../../../../docs/architecture/decisions/0005-audit-persistence-and-failure-policy.md)
+and [Milestone 2 notes](../../../../docs/features/milestone-2.md).

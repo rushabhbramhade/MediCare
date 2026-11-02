@@ -9,6 +9,13 @@
   store, PWA manifest/service worker/icons, security headers, auth proxy.
 - NestJS API: config validation, Postgres/Redis clients, health/readiness, JWKS auth,
   roles, throttling, audit interceptor, error envelope, Zod pipe, Swagger, tests.
+- Patient profile: `GET|PUT|PATCH /v1/patients/me`, subject-scoped SQL, verified phone
+  only, accessibility preferences, validation and web form.
+- Persistent append-only audit: `app.audit_logs`, fail-closed profile writes,
+  fail-open reads/generic events, metadata scrubbing, UPDATE/DELETE/TRUNCATE triggers.
+- Hospital discovery: authenticated PostGIS search over `verified`/`stale` rows,
+  distance ordering, specialty/emergency filters, pagination, source/freshness labels,
+  and an explicit `NO_DATA_SOURCE_CONFIGURED` response. Provider remains disabled.
 - FastAPI AI: settings validation, internal-token auth, emergency guard, intent
   routing, provider abstraction (disabled), consent-gated retrieval interface,
   redaction, output validation, symptom/report endpoints, tests.
@@ -19,13 +26,14 @@
 
 ## Deferred (folder/documentation exists, behaviour does not)
 
-- Hospital, doctor, pharmacy, ambulance and medicine discovery.
+- Doctor, pharmacy, ambulance and medicine discovery.
+- A licensed hospital data source, bed/ICU availability, ratings and wait times.
 - Appointments, prescriptions, care plans, caregiver links.
 - Medical record upload, storage, OCR and retrieval.
 - Any provider integration, including LLM, SMS, email and maps geocoding.
-- Audit-log persistence to the database.
+- Audit read/export API, retention policy and external write-once sink.
 - Queue producers; no app code enqueues jobs yet.
-- Profile editing, consent management UI, account deletion.
+- Consent management UI and account deletion.
 
 ## Explicitly out of scope for now
 

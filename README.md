@@ -6,14 +6,14 @@ launched product.
 
 ## Status
 
-| Area                  | State                                                                                                                    |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Web (Next.js 16, PWA) | Public pages, phone-OTP login UI, protected patient shell, 8 patient routes. Provider features show honest empty states. |
-| API (NestJS 12)       | Health/readiness, `GET /v1/auth/me`, JWT/JWKS auth, roles, throttling, error envelope, Swagger.                          |
-| AI (FastAPI)          | Safety guard, consent-gated pipeline, provider abstraction. **Provider disabled by default.**                            |
-| Workers (BullMQ)      | Boot and consume queues; jobs fail because no integration exists.                                                        |
-| Database              | Extensions + foundation schema. No clinical tables, no seed data.                                                        |
-| Integrations          | None. Every provider defaults to `disabled`.                                                                             |
+| Area                  | State                                                                                                                            |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Web (Next.js 16, PWA) | Public pages, phone-OTP login UI, protected patient shell, editable patient profile, hospital finder with honest empty states.   |
+| API (NestJS 12)       | Health/readiness, `GET /v1/auth/me`, profile read/write, hospital search, JWKS auth, roles, throttling, error envelope, Swagger. |
+| AI (FastAPI)          | Safety guard, consent-gated pipeline, provider abstraction. **Provider disabled by default.**                                    |
+| Workers (BullMQ)      | Boot and consume queues; jobs fail because no integration exists.                                                                |
+| Database              | Extensions, foundation schema, persistent append-only audit trail, PostGIS hospital directory. No seed data.                     |
+| Integrations          | Hospital directory adapter is implemented but `disabled`; every provider defaults to `disabled`.                                 |
 
 No hospital, doctor, pharmacy, stock or ambulance data is bundled or invented. No
 compliance certification (HIPAA, DPDP, ABDM, ISO) is claimed.
@@ -56,6 +56,16 @@ report dependencies down, and auth stays fail-closed without Supabase configurat
 | `pnpm check:secrets`                           | scan for committed secrets              |
 | `pnpm ai:sync`, `pnpm ai:lint`, `pnpm ai:test` | Python setup and checks                 |
 
+Live PostgreSQL integration tests are skipped unless `DATABASE_URL` is present. Turbo
+does not forward it in the current task config, so run the API package directly:
+
+```bash
+DATABASE_URL='postgresql://medicare:medicare_local_only@localhost:5432/medicare' \
+  pnpm --filter @medicare/api test
+```
+
+Without it, the five integration tests are skipped, not faked.
+
 ## Layout
 
 ```
@@ -79,22 +89,28 @@ Required for a full local API boot: `DATABASE_URL`, `REDIS_URL`, `JWT_ISSUER`,
 `JWT_AUDIENCE`, `JWT_JWKS_URL`, `API_CORS_ORIGINS`.
 
 Optional and disabled by default: Supabase Auth, LLM, OCR, SMS, email, geocoding,
-pharmacy/doctor/ambulance providers. The app does not invent a substitute when they are
-missing. See `.env.example` for every variable and its purpose.
+hospital/pharmacy/doctor/ambulance providers. The app does not invent a substitute when
+they are missing. `HOSPITAL_PROVIDER=disabled` is the only implemented hospital adapter;
+setting another value logs a warning and stays disabled. See `.env.example` for every
+variable and its purpose.
 
 ## What does not work yet
 
 - Sign-in requires a real Supabase project; without it, patient routes redirect to login.
 - iCare is not connected from the web app. The AI service runs, but its provider is off.
-- No provider data: hospitals, doctors, pharmacies, medicines, ambulances and stock are
-  not available.
+- No hospital data is shipped. The hospital finder returns `NO_DATA_SOURCE_CONFIGURED`
+  until a licensed provider is implemented; bed and ICU availability are always
+  `unknown`.
+- Doctors, pharmacies, medicines, ambulances and stock have no provider integration.
 - Record upload, OCR and retrieval are not implemented.
-- Audit events are logged, not persisted to `app.audit_logs`.
+- There is no audit read/export API. Rows are written and append-only, but only the
+  database owner can query them today.
 - No queue producer exists, so workers have nothing to consume.
 - No production infrastructure, backups or monitoring stack.
 
 ## Documentation
 
+- [Milestone 2 feature notes](docs/features/milestone-2.md)
 - [System overview](docs/architecture/system-overview.md)
 - [Monorepo structure](docs/architecture/monorepo-structure.md)
 - [Data flow](docs/architecture/data-flow.md)

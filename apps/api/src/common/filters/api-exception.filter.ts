@@ -11,6 +11,7 @@ import {
 import type { ApiErrorBody } from "@medicare/types";
 import type { Logger } from "pino";
 import type { Response } from "express";
+import { AuditService } from "../../audit/audit.service";
 import type { AuthenticatedRequest } from "../request.types";
 
 const CODE_BY_STATUS: Record<number, string> = {
@@ -31,13 +32,38 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 @Catch()
 @Injectable()
 export class ApiExceptionFilter implements ExceptionFilter {
-  constructor(@Inject(APP_LOGGER) private readonly logger: Logger) {}
+  constructor(
+    @Inject(APP_LOGGER) private readonly logger: Logger,
+    private readonly audit: AuditService,
+  ) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const http = host.switchToHttp();
     const response = http.getResponse<Response>();
     const request = http.getRequest<AuthenticatedRequest>();
     const status = exception instanceof HttpException ? exception.getStatus() : 500;
+    const path = request.originalUrl.split("?")[0] ?? request.originalUrl;
+
+    // Guards run before interceptors, so auth failures never reach the audit
+    // interceptor. Record them here exactly once; controller failures were
+    // already recorded by the interceptor.
+    if (
+      (status === HttpStatus.UNAUTHORIZED || status === HttpStatus.FORBIDDEN) &&
+      !request.auditIntercepted
+    ) {
+      void this.audit.record({
+        action: status === HttpStatus.UNAUTHORIZED ? "auth.unauthenticated" : "authz.denied",
+        outcome: "failure",
+        resourceType: "auth",
+        resourceId: path,
+        requestId: request.id,
+        actorId: request.user?.id,
+        actorRole: request.user?.role,
+        statusCode: status,
+        source: "api",
+        metadata: { method: request.method, path },
+      });
+    }
 
     let code = CODE_BY_STATUS[status] ?? (status >= 500 ? "internal_error" : "request_failed");
     let message = status >= 500 ? "Internal server error" : "Request failed";

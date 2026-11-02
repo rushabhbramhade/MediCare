@@ -2,9 +2,26 @@ import {
   API_ROUTES,
   type HealthResponse,
   type MeResponse,
+  type PatientProfileResponse,
   type ReadinessResponse,
 } from "@medicare/contracts";
-import type { ApiErrorBody } from "@medicare/types";
+import type {
+  ApiErrorBody,
+  HospitalSearchQuery,
+  HospitalSearchResponse,
+  PatientProfilePatchInput,
+  PatientProfileWriteInput,
+} from "@medicare/types";
+
+function toQueryString(query: object): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== null && value !== "") {
+      params.set(key, String(value));
+    }
+  }
+  return params.toString();
+}
 
 export class ApiClientError extends Error {
   readonly status: number;
@@ -83,6 +100,21 @@ export function createApiClient(options: ApiClientOptions) {
     health: () => request<HealthResponse>(API_ROUTES.health),
     readiness: () => request<ReadinessResponse>(API_ROUTES.readiness),
     me: () => request<MeResponse>(API_ROUTES.me),
+    patientProfile: {
+      get: () => request<PatientProfileResponse>(API_ROUTES.patientProfile),
+      put: (input: PatientProfileWriteInput) =>
+        request<PatientProfileResponse>(API_ROUTES.patientProfile, {
+          method: "PUT",
+          body: JSON.stringify(input),
+        }),
+      patch: (input: PatientProfilePatchInput) =>
+        request<PatientProfileResponse>(API_ROUTES.patientProfile, {
+          method: "PATCH",
+          body: JSON.stringify(input),
+        }),
+    },
+    searchHospitals: (query: HospitalSearchQuery) =>
+      request<HospitalSearchResponse>(`${API_ROUTES.hospitals}?${toQueryString(query)}`),
   };
 }
 

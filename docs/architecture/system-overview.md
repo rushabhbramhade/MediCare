@@ -23,11 +23,11 @@ flowchart LR
 | Component                  | Path             | Status                                                                                           |
 | -------------------------- | ---------------- | ------------------------------------------------------------------------------------------------ |
 | Web (Next.js 16, React 19) | `apps/web`       | Public pages, OTP login UI, patient shell, PWA. Provider screens show honest empty states.       |
-| API (NestJS 12)            | `apps/api`       | Health, readiness, `GET /v1/auth/me`. 14 modules are documented as deferred.                     |
+| API (NestJS 12)            | `apps/api`       | Health, readiness, identity, patient profile read/write, hospital search with no-source state.   |
 | AI (FastAPI)               | `apps/ai`        | Safety guard, intent routing, report/symptom endpoints, provider abstraction. Provider disabled. |
 | Workers                    | `workers/*`      | Boot and consume queues; jobs fail honestly because no integration exists.                       |
 | Shared TS packages         | `packages/*`     | Types, contracts, Zod validators, env config, typed client.                                      |
-| Database                   | `database`       | Extensions, foundation schema, migration runner. No clinical tables.                             |
+| Database                   | `database`       | Extensions, foundation schema, append-only audit trail, PostGIS hospital directory. No seeds.    |
 | Infrastructure             | `infrastructure` | Local Compose, Postgres image, scripts, deployment and monitoring notes.                         |
 
 ## What a request does today
@@ -37,8 +37,11 @@ flowchart LR
 2. The API verifies a Supabase access token against the project's JWKS on every
    non-public route, then applies role checks and rate limits.
 3. Errors return one JSON envelope with a request id (see `docs/api`).
-4. API logs are structured (`pino`); audit events go to the log, not yet to
-   `app.audit_logs`.
+4. API logs are structured (`pino`). Security events are also written to the
+   append-only `app.audit_logs` table; there is no read API yet.
+5. Patient profile reads/writes are scoped by the JWT subject. Hospital search reads
+   verified PostGIS rows, or returns `NO_DATA_SOURCE_CONFIGURED` when the provider is
+   disabled (the default).
 
 The web app does not call the AI service yet. The iCare page says so instead of
 pretending. The AI service is reachable only with `X-Internal-Token` and is designed to
@@ -47,8 +50,11 @@ sit behind the API, not the browser.
 ## Deliberate limits
 
 - No hospital, doctor, pharmacy, ambulance or stock data is bundled or invented.
-- No provider integration is enabled; every one defaults to `disabled`.
+- No provider integration is enabled; every one defaults to `disabled`. The hospital
+  finder therefore returns an explicit no-source state with no records.
+- Bed and ICU availability are never numeric; the API returns `unknown`.
 - No clinical module (records, appointments, prescriptions) is implemented.
+- Audit rows are append-only but not exposed through a read API or retention job.
 - No compliance certification is claimed. Privacy and clinical-safety constraints are
   documented, not certified.
 - No queue producer exists yet, so workers will normally see no jobs.

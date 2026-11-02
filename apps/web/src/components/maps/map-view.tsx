@@ -3,7 +3,22 @@
 import { CircleMarker, MapContainer, TileLayer, Tooltip } from "react-leaflet";
 import { publicEnv } from "@/lib/env";
 
-export default function MapView({ latitude, longitude }: { latitude: number; longitude: number }) {
+export interface MapMarker {
+  id: string;
+  latitude: number;
+  longitude: number;
+  label: string;
+}
+
+export default function MapView({
+  latitude,
+  longitude,
+  markers = [],
+}: {
+  latitude: number;
+  longitude: number;
+  markers?: MapMarker[];
+}) {
   return (
     <MapContainer
       center={[latitude, longitude]}
@@ -20,8 +35,18 @@ export default function MapView({ latitude, longitude }: { latitude: number; lon
         radius={8}
         pathOptions={{ color: "#0f766e", fillColor: "#0f766e", fillOpacity: 0.9 }}
       >
-        <Tooltip>Your approximate location</Tooltip>
+        <Tooltip>Search location</Tooltip>
       </CircleMarker>
+      {markers.map((marker) => (
+        <CircleMarker
+          key={marker.id}
+          center={[marker.latitude, marker.longitude]}
+          radius={7}
+          pathOptions={{ color: "#b91c1c", fillColor: "#b91c1c", fillOpacity: 0.8 }}
+        >
+          <Tooltip>{marker.label}</Tooltip>
+        </CircleMarker>
+      ))}
     </MapContainer>
   );
 }

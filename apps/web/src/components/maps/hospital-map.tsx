@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import type { MapMarker } from "./map-view";
 
 const MapView = dynamic(() => import("./map-view"), {
   ssr: false,
@@ -11,14 +12,22 @@ const MapView = dynamic(() => import("./map-view"), {
   ),
 });
 
-export function HospitalMap({ latitude, longitude }: { latitude: number; longitude: number }) {
+export function HospitalMap({
+  latitude,
+  longitude,
+  markers = [],
+}: {
+  latitude: number;
+  longitude: number;
+  markers?: MapMarker[];
+}) {
   return (
     <div
       role="region"
-      aria-label="Map showing your approximate location. Hospital markers appear when a verified data source is connected."
+      aria-label="Map of your search area. Hospital markers appear only for verified records returned by the API."
       className="overflow-hidden rounded-xl border border-border"
     >
-      <MapView latitude={latitude} longitude={longitude} />
+      <MapView latitude={latitude} longitude={longitude} markers={markers} />
     </div>
   );
 }

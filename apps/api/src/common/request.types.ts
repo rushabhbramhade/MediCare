@@ -8,4 +8,6 @@ import type { Request } from "express";
 export type AuthenticatedRequest = Omit<Request, "id"> & {
   user?: AuthUser;
   id?: string;
+  /** Set by AuditLogInterceptor so the exception filter does not double-record. */
+  auditIntercepted?: boolean;
 };

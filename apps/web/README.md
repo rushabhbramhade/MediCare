@@ -18,23 +18,28 @@ unavailable by design.
 
 ## Routes
 
-| Path                  | Access    | State                                    |
-| --------------------- | --------- | ---------------------------------------- |
-| `/`                   | public    | landing                                  |
-| `/emergency`          | public    | emergency numbers, no login              |
-| `/login`, `/register` | public    | phone OTP UI; requires Supabase          |
-| `/dashboard`          | protected | session summary, API health, quick links |
-| `/hospitals`          | protected | map + honest "no source configured"      |
-| `/doctors`            | protected | no provider integration                  |
-| `/medicines`          | protected | no catalogue integration                 |
-| `/ambulance`          | protected | public emergency information             |
-| `/medical-records`    | protected | upload not implemented                   |
-| `/icare`              | protected | AI not connected in this build           |
-| `/profile`            | protected | read-only session summary                |
+| Path                  | Access    | State                                        |
+| --------------------- | --------- | -------------------------------------------- |
+| `/`                   | public    | landing                                      |
+| `/emergency`          | public    | emergency numbers, no login                  |
+| `/login`, `/register` | public    | phone OTP UI; requires Supabase              |
+| `/dashboard`          | protected | session summary, API health, quick links     |
+| `/hospitals`          | protected | map + search; no-source/empty/error states   |
+| `/doctors`            | protected | no provider integration                      |
+| `/medicines`          | protected | no catalogue integration                     |
+| `/ambulance`          | protected | public emergency information                 |
+| `/medical-records`    | protected | upload not implemented                       |
+| `/icare`              | protected | AI not connected in this build               |
+| `/profile`            | protected | editable profile + read-only account summary |
 
 `src/proxy.ts` is the auth boundary (Next 16 renamed `middleware.ts`). The service
 worker caches only static assets and an offline fallback; it never caches API responses
 or patient pages.
+
+Profile and hospital screens call the API from the browser with the Supabase session
+token. They show loading, empty, error, session-expired and no-source states instead of
+substituting data. Hospital markers come only from API results. Web tests are
+state/logic tests in a node environment, not DOM render tests.
 
 ## Shared code
 

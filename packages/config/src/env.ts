@@ -43,6 +43,10 @@ export const apiEnvSchema = runtimeEnvSchema
     RATE_LIMIT_LIMIT: z.coerce.number().int().min(1).default(100),
     INTERNAL_SERVICE_TOKEN: optionalSecret(16),
     ENCRYPTION_KEY: optionalSecret(32),
+    HOSPITAL_PROVIDER: z.string().min(1).max(64).default("disabled"),
+    HOSPITAL_API_URL: z.preprocess(emptyToUndefined, z.url().optional()),
+    HOSPITAL_API_KEY: optionalSecret(8),
+    HOSPITAL_DATA_MAX_AGE_HOURS: z.coerce.number().int().min(1).max(720).default(24),
   })
   .superRefine((value, ctx) => {
     if (value.API_CORS_ORIGINS.length === 0) {

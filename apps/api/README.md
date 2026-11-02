@@ -4,13 +4,17 @@ NestJS 12 modular monolith. REST under `/v1`, OpenAPI at `/docs` outside product
 
 ## Endpoints
 
-| Method | Path               | Auth   | Purpose                                   |
-| ------ | ------------------ | ------ | ----------------------------------------- |
-| GET    | `/v1/health`       | public | liveness, no dependencies                 |
-| GET    | `/v1/health/ready` | public | Postgres + Redis readiness, 503 when down |
-| GET    | `/v1/auth/me`      | bearer | verified identity and application role    |
+| Method | Path               | Auth    | Purpose                                     |
+| ------ | ------------------ | ------- | ------------------------------------------- |
+| GET    | `/v1/health`       | public  | liveness, no dependencies                   |
+| GET    | `/v1/health/ready` | public  | Postgres + Redis readiness, 503 when down   |
+| GET    | `/v1/auth/me`      | bearer  | verified identity and application role      |
+| GET    | `/v1/patients/me`  | patient | read the linked profile                     |
+| PUT    | `/v1/patients/me`  | patient | create or replace the linked profile        |
+| PATCH  | `/v1/patients/me`  | patient | update selected profile fields              |
+| GET    | `/v1/hospitals`    | bearer  | verified hospital search or no-source state |
 
-Everything else is a documented deferred module under `src/<module>/README.md`.
+Other modules are documented as deferred under `src/<module>/README.md`.
 
 ## Commands
 
@@ -31,12 +35,21 @@ env. Required for a full boot: `DATABASE_URL`, `REDIS_URL`, `JWT_ISSUER`,
 - `@Public()` only on health.
 - One JSON error envelope with `requestId`; 5xx details are never returned.
 - Helmet, explicit CORS allowlist, no auth bypass flag.
-- Audit interceptor logs mutating authenticated requests; database persistence is
-  pending.
+- Authenticated requests are audited to the append-only `app.audit_logs`. Profile writes
+  are fail-closed; reads and generic request events are fail-open.
+- Patient queries scope by the verified JWT subject; request bodies cannot set identity.
 
 ## Tests
 
 `vitest` (not Jest): NestJS 12 ships ESM-only packages and Vitest runs them natively.
-Health service, auth service and the Zod pipe have unit tests. There is no database
-integration test yet, so the readiness/query path is not proven against real Postgres by
-CI.
+Unit and controller tests run without a database. Live PostgreSQL/PostGIS integration
+tests run only when `DATABASE_URL` is set:
+
+```bash
+DATABASE_URL='postgresql://medicare:medicare_local_only@localhost:5432/medicare' \
+  pnpm --filter @medicare/api test
+```
+
+Without it, the five integration tests are skipped. The root `pnpm test` command goes
+through Turbo, which does not forward `DATABASE_URL` in this repository's current task
+config, so use the direct command above for live proof.

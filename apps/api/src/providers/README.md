@@ -1,26 +1,38 @@
 # Providers
 
-**Status:** Deferred — foundation only
+**Status:** Boundary defined; hospital adapter implemented as `disabled`
 
 ## Responsibility
 
-Integration registry and adapters for hospital, pharmacy, doctor and ambulance partners: authentication, webhooks, retries and failure isolation.
+Integration registry and adapter contracts for hospital, pharmacy, doctor and ambulance
+partners. Each domain owns its adapter under `<module>/providers/`; this folder documents
+the shared rules.
 
-## Data owned
+## Current state
 
-- `app.provider_connections` (encrypted credentials reference)
-- Adapter implementations under each domain module
+| Provider  | Env prefix   | State                                                 |
+| --------- | ------------ | ----------------------------------------------------- |
+| Hospital  | `HOSPITAL_`  | `disabled`; interface + disabled implementation only  |
+| Pharmacy  | `PHARMACY_`  | disabled; no contract                                 |
+| Doctor    | `DOCTOR_`    | disabled; no contract                                 |
+| Ambulance | `AMBULANCE_` | disabled; public emergency numbers are not a provider |
 
-## Planned HTTP surface
+The hospital factory accepts only `HOSPITAL_PROVIDER=disabled`. Any other value logs
+`hospital_provider_not_implemented; staying disabled` and returns the disabled adapter.
+`HOSPITAL_API_URL`, `HOSPITAL_API_KEY` and `HOSPITAL_DATA_MAX_AGE_HOURS` are reserved for
+a future adapter; no current code calls a vendor.
 
-- Admin-only configuration API (deferred)
+## Rules
 
-## Security and safety notes
-
-Credentials come from the secret manager, never source control. Verify webhook signatures. Adapters must time out and degrade to a clear "unavailable" state, never fabricated data.
+- No fabricated records, availability, ratings or distances.
+- Business code depends on the interface, never a vendor SDK.
+- Responses carry `source`, `lastSyncedAt` and freshness; unknown values stay unknown.
+- Provider failure returns an explicit unavailable state, never a fallback dataset.
+- Credentials live in server environment only and are never logged.
 
 ## Next step
 
-Read docs/integrations/provider-integration-strategy.md, then implement one adapter against a real sandbox.
+Implement one real adapter against a licensed sandbox, with contract fixtures, timeout,
+kill switch and a sync worker. Update this table and the provider strategy first.
 
-See [docs/architecture](../../../../docs/architecture/system-overview.md) and the API conventions in [docs/api](../../../../docs/api/api-conventions.md).
+See [docs/integrations/provider-integration-strategy.md](../../../../docs/integrations/provider-integration-strategy.md).

@@ -2,9 +2,10 @@
 
 ## Current posture
 
-RLS is **enabled** on `app.users`, `app.patient_profiles`, `app.consents` and
-`app.audit_logs` with **no policies**. That is default-deny: Supabase's `anon` and
-`authenticated` roles cannot read or write these tables directly through PostgREST.
+RLS is **enabled** on `app.users`, `app.patient_profiles`, `app.consents`,
+`app.audit_logs` and `app.hospitals` with **no policies**. That is default-deny:
+Supabase's `anon` and `authenticated` roles cannot read or write these tables directly
+through PostgREST.
 
 The API connects with the table owner (`DATABASE_URL`), which bypasses RLS. All patient
 data access therefore goes through the API, where authentication, roles and audit

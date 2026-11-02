@@ -72,21 +72,73 @@ and replaced with a safe fallback.
 
 No upload, storage bucket policy or worker producer is implemented in this build.
 
-## 5. Provider discovery (planned)
+## 5. Patient profile
 
-Search requests go to the API, which queries a provider adapter. Responses carry
-`source` and `observed_at`. Stale data is labelled stale. If no contract exists, the
-API returns an explicit "not configured" state, never sample entries.
+```mermaid
+sequenceDiagram
+    participant P as Patient (browser)
+    participant W as Web
+    participant A as NestJS API
+    participant D as Postgres
+    P->>W: profile form (PUT or PATCH)
+    W->>A: /v1/patients/me + Bearer token
+    A->>A: verify JWT, take user id and phone claim
+    A->>D: BEGIN
+    A->>D: upsert app.users + app.patient_profiles WHERE user_id = token sub
+    A->>D: INSERT app.audit_logs
+    A->>D: COMMIT
+    A-->>W: { profile }
+```
 
-## 6. Audit
+- The request body never supplies `userId` or `phone`; both come from the verified
+  token. Unknown fields are rejected.
+- `PUT` replaces the profile and creates it when absent. `PATCH` updates selected
+  fields and returns `404 profile_not_found` when no row exists.
+- A failed audit insert rolls the profile change back (fail-closed). Reads still
+  succeed if their audit insert fails (fail-open) and log `audit_persist_failed`.
 
-`AuditLogInterceptor` records authenticated mutating requests and logs them through
-`pino` with actor id, action, resource, request id and IP. Persisting to
-`app.audit_logs` is the next step; the table already exists.
+## 6. Hospital discovery
+
+```mermaid
+sequenceDiagram
+    participant W as Web
+    participant A as NestJS API
+    participant P as Hospital provider adapter
+    participant D as Postgres/PostGIS
+    W->>A: GET /v1/hospitals?latitude&longitude&radiusKm
+    A->>P: describe()
+    alt provider not configured
+        A-->>W: NO_DATA_SOURCE_CONFIGURED, data: []
+    else configured
+        A->>D: ST_DWithin + specialty/emergency filters
+        D-->>A: verified/stale rows ordered by distance
+        A-->>W: OK, rows + source/freshness meta
+    end
+```
+
+- Only `verified` and `stale` rows are searchable; `unverified` rows stay hidden.
+- Every row carries `source`, `lastSyncedAt`, `isStale` and
+  `bedAvailability: "unknown"`. `hasEmergency: null` means the source did not verify
+  emergency capability.
+- With no licensed provider, the API does not query the database and does not invent
+  records. This is the default state.
+
+## 7. Audit
+
+- `PatientsService` writes rich profile events. `AuditLogInterceptor` writes generic
+  request success/failure events and skips success for `@ServiceAudited()` routes to
+  avoid duplicates. `ApiExceptionFilter` writes guard-level 401/403 events once.
+- `app.audit_logs` is append-only: triggers reject UPDATE, DELETE and TRUNCATE. RLS is
+  default-deny for non-owner roles.
+- Metadata is scrubbed of passwords, OTPs, tokens, secrets, cookies, phone, email,
+  address and clinical content before insertion.
+- There is no audit read API, retention policy or export yet.
 
 ## Data minimisation
 
 - Supabase owns credentials and sessions.
 - `app.users` stores only id, phone and role.
+- `app.patient_profiles` stores the profile fields shown in the UI; no address,
+  government id or clinical history.
 - AI requests carry `patient_ref`, never phone numbers or government ids.
 - Audit metadata must never contain clinical content.

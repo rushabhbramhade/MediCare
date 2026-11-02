@@ -57,5 +57,6 @@ package, not `src`, so `pnpm build` works from a clean checkout.
 4. Add tests next to the service and at least one endpoint test.
 5. Update the docs that describe the module's data and consent behaviour.
 
-Do not add a module folder without behaviour; the existing deferred modules are
-README-only on purpose.
+Do not add a module folder without behaviour. Deferred modules such as doctors,
+medicines and records are README-only on purpose; patients, hospitals and audit now have
+implementations.

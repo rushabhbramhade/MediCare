@@ -5,16 +5,34 @@ explicit "not configured" state, never sample data and never a simulated success
 
 ## Categories
 
-| Provider         | Env prefix   | Current state                                                  |
-| ---------------- | ------------ | -------------------------------------------------------------- |
-| LLM              | `AI_`        | `AI_PROVIDER=disabled`; only `openai-compatible` is recognised |
-| OCR              | `OCR_`       | disabled; no adapter                                           |
-| Geocoding        | `GEOCODING_` | disabled; map tiles work without it                            |
-| SMS              | `SMS_`       | disabled; no adapter                                           |
-| Email            | `EMAIL_`     | disabled; no adapter                                           |
-| Pharmacy stock   | `PHARMACY_`  | disabled; no contract                                          |
-| Doctor directory | `DOCTOR_`    | disabled; no contract                                          |
-| Ambulance        | `AMBULANCE_` | disabled; emergency page uses public numbers                   |
+| Provider         | Env prefix   | Current state                                                    |
+| ---------------- | ------------ | ---------------------------------------------------------------- |
+| Hospital         | `HOSPITAL_`  | `disabled`; interface + disabled adapter only; no vendor assumed |
+| LLM              | `AI_`        | `AI_PROVIDER=disabled`; only `openai-compatible` is recognised   |
+| OCR              | `OCR_`       | disabled; no adapter                                             |
+| Geocoding        | `GEOCODING_` | disabled; map tiles work without it                              |
+| SMS              | `SMS_`       | disabled; no adapter                                             |
+| Email            | `EMAIL_`     | disabled; no adapter                                             |
+| Pharmacy stock   | `PHARMACY_`  | disabled; no contract                                            |
+| Doctor directory | `DOCTOR_`    | disabled; no contract                                            |
+| Ambulance        | `AMBULANCE_` | disabled; emergency page uses public numbers                     |
+
+## Hospital directory
+
+`apps/api/src/hospitals/providers/hospital-provider.ts` defines the adapter boundary:
+`describe()` returns `configured`, capabilities, provenance (`source`, `license`) and a
+freshness window (`maxStalenessHours`). The service queries `app.hospitals` only when
+`configured` is true.
+
+`HOSPITAL_PROVIDER=disabled` is the only accepted value. Any other value logs
+`hospital_provider_not_implemented; staying disabled` and returns the disabled adapter,
+so a typo cannot fake a feed. `HOSPITAL_API_URL`, `HOSPITAL_API_KEY` and
+`HOSPITAL_DATA_MAX_AGE_HOURS` are reserved; no current code calls a vendor.
+
+With no provider, `GET /v1/hospitals` returns `NO_DATA_SOURCE_CONFIGURED` with
+`data: []` and does not query the database. A configured adapter must still store only
+`verified` or `stale` rows, keep `has_emergency` nullable, and never populate bed or ICU
+counts. The API always returns `bedAvailability: "unknown"` today.
 
 ## Rules
 
@@ -22,8 +40,9 @@ explicit "not configured" state, never sample data and never a simulated success
    state. It never falls back to invented hospitals, doctors, stock or medical answers.
 2. **Adapter boundary.** Each provider gets an interface plus one implementation and a
    factory that returns `null` when disabled. Business code depends on the interface.
-3. **Provenance.** Provider-sourced records carry `source` and `observed_at`. The UI can
-   then say how fresh the data is.
+3. **Provenance.** Provider-sourced records carry `source` and an observation/sync
+   timestamp. Hospital rows expose `source`, `lastSyncedAt` and `isStale`; unknown
+   availability stays `unknown`.
 4. **Fail closed.** Authentication and consent checks happen before the provider call.
    A provider failure must not bypass them.
 5. **Timeouts and retries.** Set connect/read timeouts. Retry only idempotent calls with
@@ -45,8 +64,9 @@ explicit "not configured" state, never sample data and never a simulated success
 2. Add env vars to `.env.example` and the relevant schema in `@medicare/config` (or the
    Python settings).
 3. Add the factory branch and tests for disabled, missing-config and success cases.
-4. Add the provider's failure mode to the UI copy.
-5. Update this table and `docs/requirements/scope.md`.
+   The hospital factory must stay default-deny: an unknown name logs and stays disabled.
+4. Add the provider's failure mode to the UI copy and a no-source state.
+5. Update this table, the module README and `docs/requirements/scope.md`.
 
 ## Emergency path
 

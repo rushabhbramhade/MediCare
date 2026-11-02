@@ -13,6 +13,8 @@ import { AppConfigModule } from "./config/config.module";
 import { APP_ENV } from "./config/env";
 import { DatabaseModule } from "./database/database.module";
 import { HealthModule } from "./health/health.module";
+import { HospitalsModule } from "./hospitals/hospitals.module";
+import { PatientsModule } from "./patients/patients.module";
 import { RedisModule } from "./redis/redis.module";
 
 @Module({
@@ -36,6 +38,8 @@ import { RedisModule } from "./redis/redis.module";
     AuditModule,
     AuthModule,
     HealthModule,
+    PatientsModule,
+    HospitalsModule,
   ],
   providers: [
     // Order matters: throttle -> authenticate -> authorize.

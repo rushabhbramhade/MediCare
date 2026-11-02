@@ -1,4 +1,5 @@
 import {
+  Inject,
   Injectable,
   UnauthorizedException,
   type CanActivate,
@@ -13,8 +14,8 @@ import type { AuthenticatedRequest } from "../request.types";
 @Injectable()
 export class SupabaseAuthGuard implements CanActivate {
   constructor(
-    private readonly reflector: Reflector,
-    private readonly authService: AuthService,
+    @Inject(Reflector) private readonly reflector: Reflector,
+    @Inject(AuthService) private readonly authService: AuthService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
