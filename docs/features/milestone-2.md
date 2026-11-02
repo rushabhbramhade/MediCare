@@ -223,13 +223,11 @@ pnpm test
 pnpm ai:test
 ```
 
-Live PostgreSQL integration tests are skipped unless `DATABASE_URL` is present. Turbo
-does not forward the variable in this repository's current task config, so run the API
-package directly:
+Live PostgreSQL integration tests run when `DATABASE_URL` is present and are skipped
+otherwise:
 
 ```bash
-DATABASE_URL='postgresql://medicare:medicare_local_only@localhost:5432/medicare' \
-  pnpm --filter @medicare/api test
+DATABASE_URL='postgresql://medicare:medicare_local_only@localhost:5432/medicare' pnpm test
 ```
 
 That suite proves profile create/read/update, patient isolation, append-only audit

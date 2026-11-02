@@ -46,10 +46,8 @@ Unit and controller tests run without a database. Live PostgreSQL/PostGIS integr
 tests run only when `DATABASE_URL` is set:
 
 ```bash
-DATABASE_URL='postgresql://medicare:medicare_local_only@localhost:5432/medicare' \
-  pnpm --filter @medicare/api test
+DATABASE_URL='postgresql://medicare:medicare_local_only@localhost:5432/medicare' pnpm test
 ```
 
-Without it, the five integration tests are skipped. The root `pnpm test` command goes
-through Turbo, which does not forward `DATABASE_URL` in this repository's current task
-config, so use the direct command above for live proof.
+Without it, the five integration tests are skipped. Turbo forwards `DATABASE_URL` to
+the test task.

@@ -56,12 +56,11 @@ report dependencies down, and auth stays fail-closed without Supabase configurat
 | `pnpm check:secrets`                           | scan for committed secrets              |
 | `pnpm ai:sync`, `pnpm ai:lint`, `pnpm ai:test` | Python setup and checks                 |
 
-Live PostgreSQL integration tests are skipped unless `DATABASE_URL` is present. Turbo
-does not forward it in the current task config, so run the API package directly:
+Live PostgreSQL integration tests run when `DATABASE_URL` is present and are skipped
+otherwise:
 
 ```bash
-DATABASE_URL='postgresql://medicare:medicare_local_only@localhost:5432/medicare' \
-  pnpm --filter @medicare/api test
+DATABASE_URL='postgresql://medicare:medicare_local_only@localhost:5432/medicare' pnpm test
 ```
 
 Without it, the five integration tests are skipped, not faked.
