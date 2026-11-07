@@ -1,28 +1,28 @@
-# Ambulance
+# Ambulance emergency numbers
 
-**Status:** Deferred — foundation only
+**Status:** Implemented — public emergency numbers only, no dispatch integration.
 
 ## Responsibility
 
-Ambulance discovery and emergency request routing through licensed emergency providers.
+Provide public emergency contact numbers (112 national, 108 state-specific ambulance).
+These are public information and require no authentication, no API key and no
+provider integration.
 
 ## Data owned
 
-- `app.ambulance_providers`
-- `app.ambulance_requests` with status history
+None — numbers are hardcoded public information from the Government of India.
 
 ## Planned HTTP surface
 
-- `GET /v1/ambulance/nearby`
-- `POST /v1/ambulance/requests`
-- `GET /v1/ambulance/requests/:id`
+- `GET /v1/ambulance/emergency-numbers` — public, returns emergency numbers
 
 ## Security and safety notes
 
-A request is not a guarantee of dispatch. Show provider confirmation explicitly and keep a call-emergency-services fallback visible. Location is shared only for an active request and expires afterwards.
+- A phone number is not an ambulance booking. Medicare does not dispatch or track ambulances.
+- No simulated dispatch is ever shown.
+- 108 operates in many states but not everywhere; if it does not connect, call 112.
+- This page is general guidance, not medical advice.
 
-## Next step
+## Environment variables
 
-Do not simulate dispatch. Integrate only with a contracted emergency provider and rehearse failure modes.
-
-See [docs/architecture](../../../../docs/architecture/system-overview.md) and the API conventions in [docs/api](../../../../docs/api/api-conventions.md).
+None required.

@@ -9,6 +9,8 @@ Plain SQL, applied in filename order by `infrastructure/scripts/migrate.mjs`.
 | `0003_patient_profile_identity.sql` | profile `id`, `full_name`, verified `phone`, accessibility preferences |
 | `0004_audit_persistence.sql`        | audit outcome/role/source columns, checks, append-only triggers        |
 | `0005_hospital_discovery.sql`       | PostGIS hospital directory, filters/indexes, default-deny RLS          |
+| `0011_ocr_metadata.sql`             | OCR processing metadata for medical documents                          |
+| `0012_osm_discovery.sql`            | OSM-discovered facility records (hospitals, pharmacies)                |
 
 ## Rules
 

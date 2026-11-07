@@ -34,11 +34,23 @@ class Settings(BaseSettings):
     internal_service_token: SecretStr | None = None
     ai_allowed_origins: str = ""
 
+    # OCR / document extraction (Tesseract — local, no paid API key).
+    # Independent of AI_PROVIDER: OCR works even when AI_PROVIDER=disabled.
+    ocr_provider: Literal["disabled", "tesseract"] = "disabled"
+    ocr_api_url: str | None = None
+    ocr_api_key: SecretStr | None = None
+    ocr_languages: str = "eng,hin,mar"
+    ocr_max_file_size_mb: int = Field(default=20, ge=1, le=100)
+    ocr_max_pages: int = Field(default=50, ge=1, le=200)
+    ocr_timeout_seconds: int = Field(default=120, ge=10, le=600)
+
     @field_validator(
         "ai_base_url",
         "ai_model",
         "ai_api_key",
         "internal_service_token",
+        "ocr_api_url",
+        "ocr_api_key",
         mode="before",
     )
     @classmethod
@@ -74,6 +86,14 @@ class Settings(BaseSettings):
     @property
     def provider_configured(self) -> bool:
         return self.ai_provider != "disabled"
+
+    @property
+    def ocr_configured(self) -> bool:
+        return self.ocr_provider == "tesseract"
+
+    @property
+    def ocr_language_list(self) -> list[str]:
+        return [lang.strip() for lang in self.ocr_languages.split(",") if lang.strip()]
 
 
 @lru_cache

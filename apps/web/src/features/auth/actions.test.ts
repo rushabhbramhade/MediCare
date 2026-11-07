@@ -41,20 +41,41 @@ describe("sendOtpAction", () => {
       ok: true,
       phone: "+919876543210",
     });
+    // No intent passed defaults to login, which must NOT create an account.
     expect(supabase.auth.signInWithOtp).toHaveBeenCalledWith({
       phone: "+919876543210",
-      options: { shouldCreateUser: true },
+      options: { shouldCreateUser: false },
     });
   });
 
   it("returns a safe error when the provider rejects the request", async () => {
     supabase.auth.signInWithOtp.mockResolvedValueOnce({
-      error: { message: "rate limited upstream" },
+      error: { message: "SMS provider unavailable" },
     });
 
     await expect(sendOtpAction({ phone: "9876543210" })).resolves.toEqual({
       ok: false,
       message: "We could not send a code right now. Wait a moment and try again.",
+    });
+  });
+
+  it("does not create an account when signing in with register intent absent", async () => {
+    supabase.auth.signInWithOtp.mockResolvedValueOnce({ error: null });
+
+    await sendOtpAction({ phone: "9876543210" });
+    expect(supabase.auth.signInWithOtp).toHaveBeenCalledWith({
+      phone: "+919876543210",
+      options: { shouldCreateUser: false },
+    });
+  });
+
+  it("creates an account when registering with explicit register intent", async () => {
+    supabase.auth.signInWithOtp.mockResolvedValueOnce({ error: null });
+
+    await sendOtpAction({ phone: "9876543210", intent: "register" });
+    expect(supabase.auth.signInWithOtp).toHaveBeenCalledWith({
+      phone: "+919876543210",
+      options: { shouldCreateUser: true },
     });
   });
 
@@ -84,28 +105,63 @@ describe("verifyOtpAction", () => {
     expect(supabase.auth.verifyOtp).not.toHaveBeenCalled();
   });
 
-  it("redirects to the dashboard after a verified OTP", async () => {
-    supabase.auth.verifyOtp.mockResolvedValueOnce({ error: null });
+  it("sends a signed-in user to the dashboard after a verified OTP", async () => {
+    supabase.auth.verifyOtp.mockResolvedValueOnce({
+      error: null,
+      data: { session: { access_token: "fake-access-token" } },
+    });
 
-    await verifyOtpAction({ phone: "9876543210", token: "123456" });
+    await expect(verifyOtpAction({ phone: "9876543210", token: "123456" })).resolves.toEqual({
+      ok: true,
+      next: "/dashboard",
+    });
 
     expect(supabase.auth.verifyOtp).toHaveBeenCalledWith({
       phone: "+919876543210",
       token: "123456",
       type: "sms",
     });
-    expect(redirect).toHaveBeenCalledWith("/dashboard");
   });
 
-  it("does not redirect when the code is invalid or expired", async () => {
+  it("falls back to dashboard when verified OTP returns no session", async () => {
     supabase.auth.verifyOtp.mockResolvedValueOnce({
-      error: { message: "Token has expired or is invalid" },
+      error: null,
+      data: { session: null },
+    });
+
+    await expect(verifyOtpAction({ phone: "9876543210", token: "123456" })).resolves.toEqual({
+      ok: true,
+      next: "/dashboard",
+    });
+  });
+
+  it("sends a new account to profile setup", async () => {
+    supabase.auth.verifyOtp.mockResolvedValueOnce({ error: null });
+
+    await expect(
+      verifyOtpAction({ phone: "9876543210", token: "123456", intent: "register" }),
+    ).resolves.toEqual({ ok: true, next: "/onboarding" });
+  });
+
+  it("explains when the code has expired", async () => {
+    supabase.auth.verifyOtp.mockResolvedValueOnce({
+      error: { code: "otp_expired", message: "Token has expired" },
     });
 
     await expect(verifyOtpAction({ phone: "9876543210", token: "123456" })).resolves.toEqual({
       ok: false,
-      message: "That code is invalid or has expired. Try again.",
+      message: "Your verification code has expired. Request a new code.",
     });
-    expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it("does not continue when the code is incorrect", async () => {
+    supabase.auth.verifyOtp.mockResolvedValueOnce({
+      error: { message: "Invalid token" },
+    });
+
+    await expect(verifyOtpAction({ phone: "9876543210", token: "123456" })).resolves.toEqual({
+      ok: false,
+      message: "Incorrect verification code. Please try again.",
+    });
   });
 });

@@ -40,6 +40,7 @@ const GENDER_LABELS: Record<Gender, string> = {
 const LANGUAGE_LABELS: Record<(typeof SUPPORTED_LANGUAGES)[number], string> = {
   en: "English",
   hi: "हिन्दी (Hindi)",
+  mr: "मराठी (Marathi)",
 };
 
 const ACCESSIBILITY_LABELS: Record<AccessibilityPreference, string> = {

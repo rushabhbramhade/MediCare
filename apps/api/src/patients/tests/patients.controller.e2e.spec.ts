@@ -23,6 +23,7 @@ const profile: PatientProfile = {
   phone: "+919876543210",
   preferredLanguage: "en",
   accessibilityPreferences: [],
+  emergencyContactPhone: null,
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
 };

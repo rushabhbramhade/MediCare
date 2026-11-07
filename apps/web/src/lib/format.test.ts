@@ -4,6 +4,7 @@ import { formatBytes, formatPhoneDisplay } from "./format";
 describe("formatPhoneDisplay", () => {
   it("formats E.164 Indian numbers for display", () => {
     expect(formatPhoneDisplay("+919876543210")).toBe("+91 98765 43210");
+    expect(formatPhoneDisplay("9876543210")).toBe("+91 98765 43210");
   });
 
   it("handles missing and non-Indian values without throwing", () => {

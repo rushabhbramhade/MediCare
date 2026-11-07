@@ -1,10 +1,19 @@
-from fastapi import FastAPI
+"""FastAPI application factory.
+
+Routes are included directly on the app with explicit prefixes and
+dependencies. APIRouter.include_router() is avoided because it is
+unreliable in this FastAPI version.
+"""
+
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1.router import router as v1_router
+from app.api.v1.endpoints import health, report_analysis, symptoms
 from app.core.config import get_settings
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging
+from app.core.security import require_internal_token
+from app.ocr.endpoints import router as ocr_router
 
 
 def create_app() -> FastAPI:
@@ -31,7 +40,29 @@ def create_app() -> FastAPI:
         )
 
     register_exception_handlers(app)
-    app.include_router(v1_router)
+
+    # Public health.
+    app.include_router(health.router, prefix="/v1")
+
+    # iCare — /v1/icare/*, requires internal token.
+    app.include_router(
+        symptoms.router,
+        prefix="/v1/icare",
+        dependencies=[Depends(require_internal_token)],
+    )
+    app.include_router(
+        report_analysis.router,
+        prefix="/v1/icare",
+        dependencies=[Depends(require_internal_token)],
+    )
+
+    # OCR — /v1/ocr/*, requires internal token.
+    app.include_router(
+        ocr_router,
+        prefix="/v1",
+        dependencies=[Depends(require_internal_token)],
+    )
+
     return app
 
 

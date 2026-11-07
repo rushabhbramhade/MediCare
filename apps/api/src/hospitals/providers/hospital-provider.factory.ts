@@ -20,7 +20,7 @@ export function createHospitalProvider(env: ApiEnv, logger: Logger): HospitalPro
   }
 
   if (requested === "manual") {
-    return new ManualHospitalProvider();
+    return new ManualHospitalProvider(env.HOSPITAL_DATA_MAX_AGE_HOURS);
   }
 
   logger.warn({ provider: requested }, "hospital_provider_not_implemented; staying disabled");

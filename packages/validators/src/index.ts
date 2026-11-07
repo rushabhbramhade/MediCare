@@ -117,6 +117,10 @@ const patientProfileFields = {
   gender: z.enum(GENDERS).nullish(),
   preferredLanguage: z.enum(SUPPORTED_LANGUAGES),
   accessibilityPreferences: accessibilityPreferencesSchema,
+  emergencyContactPhone: z.preprocess(
+    (value) => (value === "" || value === undefined ? null : value),
+    indianPhoneSchema.nullish(),
+  ),
 } as const;
 
 /**
@@ -157,6 +161,37 @@ export const hospitalSearchSchema = z
   .object({
     latitude: requiredCoordinate(-90, 90, "latitude"),
     longitude: requiredCoordinate(-180, 180, "longitude"),
+    q: z.preprocess(
+      (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+      z.string().trim().min(1).max(120).optional(),
+    ),
+    bbox: z.preprocess(
+      (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+      z
+        .string()
+        .trim()
+        .regex(
+          /^-?\d+(?:\.\d+)?(?:,-?\d+(?:\.\d+)?){3}$/,
+          "bbox must be minLng,minLat,maxLng,maxLat",
+        )
+        .refine((value) => {
+          const [minLng, minLat, maxLng, maxLat] = value.split(",").map(Number) as [
+            number,
+            number,
+            number,
+            number,
+          ];
+          return (
+            minLng >= -180 &&
+            maxLng <= 180 &&
+            minLat >= -90 &&
+            maxLat <= 90 &&
+            minLng < maxLng &&
+            minLat < maxLat
+          );
+        }, "bbox coordinates are out of range or not ordered")
+        .optional(),
+    ),
     radiusKm: z.coerce
       .number()
       .min(0.5, "Radius must be at least 0.5 km")
@@ -164,11 +199,30 @@ export const hospitalSearchSchema = z
       .default(5),
     specialty: z.string().trim().min(1).max(80).optional(),
     emergencyOnly: booleanQueryParam,
+    /** Alias for `emergencyOnly`. */
+    emergency: booleanQueryParam.optional(),
+    availableBeds: booleanQueryParam,
+    icuAvailable: booleanQueryParam,
+    open24x7: booleanQueryParam,
+    ambulanceAvailable: booleanQueryParam,
     hospitalType: z.enum(HOSPITAL_TYPES).optional(),
+    /** Alias for `hospitalType`. */
+    ownershipType: z.enum(HOSPITAL_TYPES).optional(),
     page: z.coerce.number().int().min(1).default(1),
     pageSize: z.coerce.number().int().min(1).max(50).default(20),
   })
-  .strict();
+  .strict()
+  .transform((value) => {
+    const { emergency, ownershipType, ...rest } = value;
+    const hospitalType = value.hospitalType ?? ownershipType;
+    return {
+      ...rest,
+      emergencyOnly: value.emergencyOnly || emergency === true,
+      ...(hospitalType ? { hospitalType } : {}),
+    };
+  });
+
+export const hospitalIdSchema = z.string().uuid("Hospital id must be a UUID");
 
 export type LoginInput = z.infer<typeof loginSchema>;
 export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;

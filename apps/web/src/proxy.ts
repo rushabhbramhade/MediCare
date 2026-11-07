@@ -11,6 +11,7 @@ const PROTECTED_PREFIXES = [
   "/doctors",
   "/ambulance",
   "/profile",
+  "/onboarding",
 ];
 
 const AUTH_PAGES = ["/login", "/register"];

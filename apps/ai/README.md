@@ -10,8 +10,10 @@ medical device and must not be exposed directly to patients.
 | GET    | `/v1/health`                | public         | liveness + whether a provider is configured |
 | POST   | `/v1/icare/symptoms`        | internal token | symptom guidance request                    |
 | POST   | `/v1/icare/reports/analyze` | internal token | plain-language report explanation           |
+| POST   | `/v1/ocr/process`           | internal token | local Tesseract OCR text extraction         |
+| GET    | `/v1/ocr/status/:job_id`    | internal token | OCR processing status and results           |
 
-If `INTERNAL_SERVICE_TOKEN` is unset, iCare routes return 503. A wrong token returns 401.
+If `INTERNAL_SERVICE_TOKEN` is unset, iCare and OCR routes return 503. A wrong token returns 401.
 
 ## Run
 
@@ -24,8 +26,12 @@ uv run ruff check .
 ```
 
 Provider settings live in `app/core/config.py`. `AI_PROVIDER=disabled` (the default)
-means non-emergency requests fail with an honest unavailable error. Emergency red-flag
-answers still work because they are deterministic and never call a provider.
+means non-emergency iCare requests fail with an honest unavailable error. Emergency
+red-flag answers still work because they are deterministic and never call a provider.
+
+OCR is independent of `AI_PROVIDER`. Set `OCR_PROVIDER=tesseract` to enable local
+Tesseract OCR (no paid API key). Requires the `tesseract` executable and language
+data (`eng`, `hin`, `mar`) to be installed on the host.
 
 ## Safety order
 

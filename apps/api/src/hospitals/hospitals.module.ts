@@ -18,5 +18,6 @@ import { HospitalAvailabilityService } from "./services/hospital-availability.se
       useFactory: createHospitalProvider,
     },
   ],
+  exports: [HospitalsService, HospitalAvailabilityService, HOSPITAL_PROVIDER],
 })
 export class HospitalsModule {}

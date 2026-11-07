@@ -15,6 +15,7 @@ import {
   ApiParam,
   ApiTags,
 } from "@nestjs/swagger";
+import { Roles } from "../../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
 import { HospitalAvailabilityService } from "../services/hospital-availability.service";
 
@@ -49,6 +50,7 @@ export class HospitalAvailabilityController {
   }
 
   @Post("hospital/:hospitalId/resource/:resourceType")
+  @Roles("hospital_admin")
   @ApiOperation({ summary: "Upsert availability for a hospital resource" })
   @ApiParam({ name: "hospitalId", type: String })
   @ApiParam({ name: "resourceType", type: String })
