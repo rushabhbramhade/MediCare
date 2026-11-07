@@ -48,7 +48,7 @@ export interface Paginated<T> {
 
 export type IsoDateTimeString = string;
 
-export const SUPPORTED_LANGUAGES = ["en", "hi"] as const;
+export const SUPPORTED_LANGUAGES = ["en", "hi", "mr"] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
 export const GENDERS = ["female", "male", "other", "prefer_not_to_say"] as const;
@@ -71,6 +71,7 @@ export interface PatientProfile {
   phone: string | null;
   preferredLanguage: SupportedLanguage;
   accessibilityPreferences: AccessibilityPreference[];
+  emergencyContactPhone: string | null;
   createdAt: IsoDateTimeString;
   updatedAt: IsoDateTimeString;
 }
@@ -81,6 +82,7 @@ export interface PatientProfileWriteInput {
   gender?: Gender | null;
   preferredLanguage?: SupportedLanguage;
   accessibilityPreferences?: AccessibilityPreference[];
+  emergencyContactPhone?: string | null;
 }
 
 export type PatientProfilePatchInput = Partial<PatientProfileWriteInput>;
@@ -121,8 +123,28 @@ export interface HospitalSummary {
   source: string;
   lastSyncedAt: IsoDateTimeString;
   isStale: boolean;
+  /** Provider-declared opening hours. NULL means not reported. */
+  openingHours: string | null;
+  /** Provider-declared 24x7 opening. NULL means not reported. */
+  isOpen24x7: boolean | null;
+  /** Provider-declared ambulance service. NULL means not reported. */
+  hasAmbulance: boolean | null;
   /** Never a number until a licensed live source exists. */
   bedAvailability: BedAvailability;
+  /** Reported operational capacity. Empty means nothing has been reported. */
+  availability: HospitalAvailability[];
+}
+
+export interface HospitalDetail extends Omit<HospitalSummary, "distanceKm"> {
+  /** Null when the request supplied no search origin. */
+  distanceKm: number | null;
+  externalId: string;
+  countryCode: string;
+  lastVerifiedAt: IsoDateTimeString | null;
+}
+
+export interface HospitalDetailResponse {
+  hospital: HospitalDetail;
 }
 
 export const AVAILABILITY_STATUSES = [
@@ -198,9 +220,20 @@ export interface HospitalSearchResponse {
 export interface HospitalSearchQuery {
   latitude: number;
   longitude: number;
+  /** Free text across hospital name, address and city. */
+  q?: string;
+  /** Viewport filter in `minLng,minLat,maxLng,maxLat` order. */
+  bbox?: string;
   radiusKm?: number;
   specialty?: string;
   emergencyOnly?: boolean;
+  /** Only hospitals with a fresh reported general-bed availability. */
+  availableBeds?: boolean;
+  /** Only hospitals with a fresh reported ICU-bed availability. */
+  icuAvailable?: boolean;
+  open24x7?: boolean;
+  /** Only hospitals that declared ambulance service. */
+  ambulanceAvailable?: boolean;
   hospitalType?: HospitalType;
   page?: number;
   pageSize?: number;

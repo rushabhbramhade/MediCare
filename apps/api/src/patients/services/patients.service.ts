@@ -19,13 +19,14 @@ interface PatientProfileRow {
   phone: string | null;
   preferred_language: SupportedLanguage;
   accessibility_preferences: AccessibilityPreference[];
+  emergency_contact_phone: string | null;
   created_at: Date | string;
   updated_at: Date | string;
 }
 
 const PROFILE_COLUMNS = `
   id, full_name, date_of_birth, gender, phone, preferred_language,
-  accessibility_preferences, created_at, updated_at
+  accessibility_preferences, emergency_contact_phone, created_at, updated_at
 `;
 
 function toIso(value: Date | string): string {
@@ -46,6 +47,7 @@ export function mapProfileRow(row: PatientProfileRow): PatientProfile {
     phone: row.phone,
     preferredLanguage: row.preferred_language,
     accessibilityPreferences: row.accessibility_preferences,
+    emergencyContactPhone: row.emergency_contact_phone,
     createdAt: toIso(row.created_at),
     updatedAt: toIso(row.updated_at),
   };
@@ -102,8 +104,8 @@ export class PatientsService {
         `
           INSERT INTO app.patient_profiles (
             user_id, full_name, date_of_birth, gender, phone,
-            preferred_language, accessibility_preferences
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+            preferred_language, accessibility_preferences, emergency_contact_phone
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
           ON CONFLICT (user_id) DO UPDATE SET
             full_name = EXCLUDED.full_name,
             date_of_birth = EXCLUDED.date_of_birth,
@@ -111,6 +113,7 @@ export class PatientsService {
             phone = COALESCE(EXCLUDED.phone, app.patient_profiles.phone),
             preferred_language = EXCLUDED.preferred_language,
             accessibility_preferences = EXCLUDED.accessibility_preferences,
+            emergency_contact_phone = EXCLUDED.emergency_contact_phone,
             updated_at = now()
           RETURNING ${PROFILE_COLUMNS}, (xmax = 0) AS inserted
         `,
@@ -122,6 +125,7 @@ export class PatientsService {
           actor.phone ?? null,
           input.preferredLanguage ?? "en",
           input.accessibilityPreferences ?? [],
+          input.emergencyContactPhone ?? null,
         ],
       );
 
@@ -160,6 +164,8 @@ export class PatientsService {
             preferred_language = CASE WHEN $8 THEN $9 ELSE preferred_language END,
             accessibility_preferences =
               CASE WHEN $10 THEN $11::text[] ELSE accessibility_preferences END,
+            emergency_contact_phone =
+              CASE WHEN $12 THEN $13 ELSE emergency_contact_phone END,
             updated_at = now()
           WHERE user_id = $1
           RETURNING ${PROFILE_COLUMNS}
@@ -176,6 +182,8 @@ export class PatientsService {
           input.preferredLanguage ?? null,
           input.accessibilityPreferences !== undefined,
           input.accessibilityPreferences ?? null,
+          input.emergencyContactPhone !== undefined,
+          input.emergencyContactPhone ?? null,
         ],
       );
 

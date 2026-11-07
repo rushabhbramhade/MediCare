@@ -77,9 +77,24 @@ describe("hospital search schema", () => {
       longitude: 72.8777,
       radiusKm: 5,
       emergencyOnly: true,
+      availableBeds: false,
+      icuAvailable: false,
+      open24x7: false,
+      ambulanceAvailable: false,
       page: 1,
       pageSize: 20,
     });
+  });
+
+  it("maps emergency and ownershipType aliases to canonical fields", () => {
+    const parsed = hospitalSearchSchema.parse({
+      latitude: 19,
+      longitude: 72,
+      emergency: "true",
+      ownershipType: "private",
+    });
+    expect(parsed.emergencyOnly).toBe(true);
+    expect(parsed.hospitalType).toBe("private");
   });
 
   it("rejects missing, out-of-range and empty coordinates", () => {

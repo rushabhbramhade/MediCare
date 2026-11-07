@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/shared/page-header";
-import { HospitalFinder } from "@/features/hospitals/components/hospital-finder";
+import { HospitalWorkspace } from "@/features/hospitals/components/hospital-workspace";
+import { OsmDiscoveryPanel } from "@/features/hospitals/components/osm-discovery-panel";
 
 export const metadata: Metadata = { title: "Hospitals" };
 
@@ -9,9 +10,26 @@ export default function HospitalsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Hospitals near you"
-        description="Share your location to see the area on a map. Hospital and bed data will only appear when a verified source is connected."
+        description="Search verified hospital records, compare reported availability and open directions. Bed counts appear only when a hospital has reported them."
       />
-      <HospitalFinder />
+      <HospitalWorkspace />
+      <details className="rounded-xl border border-border bg-card p-4">
+        <summary className="cursor-pointer text-sm font-semibold">
+          OpenStreetMap discovery (unverified)
+        </summary>
+        <div className="mt-4">
+          <p className="mb-4 text-sm text-muted-foreground">
+            OpenStreetMap can suggest hospitals and pharmacies near a point. These are
+            directory features, not verified hospital records: emergency capability and
+            bed availability are unknown.
+          </p>
+          <OsmDiscoveryPanel
+            featureType="hospital"
+            title="OpenStreetMap hospitals"
+            description="Search OpenStreetMap for hospital features near a point. Results are unverified."
+          />
+        </div>
+      </details>
     </div>
   );
 }

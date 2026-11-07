@@ -15,6 +15,7 @@ export const EMPTY_PROFILE_FORM: PatientProfilePutInput = {
   gender: null,
   preferredLanguage: "en",
   accessibilityPreferences: [],
+  emergencyContactPhone: null,
 };
 
 export function isProfileNotFound(error: unknown): boolean {
@@ -35,6 +36,7 @@ export function profileToFormValues(
     gender: profile.gender,
     preferredLanguage: profile.preferredLanguage,
     accessibilityPreferences: [...profile.accessibilityPreferences],
+    emergencyContactPhone: profile.emergencyContactPhone,
   };
 }
 

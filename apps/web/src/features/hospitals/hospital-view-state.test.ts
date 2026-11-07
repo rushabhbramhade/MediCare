@@ -26,7 +26,11 @@ const hospital: HospitalSummary = {
   source: "licensed-test",
   lastSyncedAt: "2026-01-01T00:00:00.000Z",
   isStale: false,
+  openingHours: null,
+  isOpen24x7: null,
+  hasAmbulance: null,
   bedAvailability: "unknown",
+  availability: [],
 };
 
 const meta: HospitalSearchResponse["meta"] = {

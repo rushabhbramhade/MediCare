@@ -19,6 +19,7 @@ const row = {
   phone: "+919876543210",
   preferred_language: "en" as const,
   accessibility_preferences: ["large_text" as const],
+  emergency_contact_phone: null,
   created_at: "2026-01-01T00:00:00.000Z",
   updated_at: "2026-01-02T00:00:00.000Z",
 };
@@ -47,6 +48,7 @@ describe("mapProfileRow", () => {
       phone: "+919876543210",
       preferredLanguage: "en",
       accessibilityPreferences: ["large_text"],
+      emergencyContactPhone: null,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     });
@@ -110,6 +112,7 @@ describe("PatientsService writes", () => {
       actor.phone,
       "en",
       ["large_text"],
+      null,
     ]);
     expect(audit.recordWithin).toHaveBeenCalledWith(
       client,

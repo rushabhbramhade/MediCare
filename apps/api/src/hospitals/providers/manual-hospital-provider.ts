@@ -12,6 +12,8 @@ import type { HospitalProvider, HospitalProviderDescriptor } from "./hospital-pr
  * data contract exists.
  */
 export class ManualHospitalProvider implements HospitalProvider {
+  constructor(private readonly maxStalenessHours = 24) {}
+
   describe(): HospitalProviderDescriptor {
     return {
       name: "dev-sample",
@@ -28,7 +30,7 @@ export class ManualHospitalProvider implements HospitalProvider {
       },
       sync: {
         strategy: "manual",
-        maxStalenessHours: 24,
+        maxStalenessHours: this.maxStalenessHours,
       },
     };
   }

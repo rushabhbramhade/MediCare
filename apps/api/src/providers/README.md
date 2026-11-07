@@ -1,6 +1,7 @@
 # Providers
 
-**Status:** Boundary defined; hospital adapter implemented as `disabled`
+**Status:** Boundary defined; hospital adapter implemented as `disabled`;
+OSM Overpass discovery available for hospital/pharmacy lookup.
 
 ## Responsibility
 
@@ -16,11 +17,17 @@ the shared rules.
 | Pharmacy  | `PHARMACY_`  | disabled; no contract                                 |
 | Doctor    | `DOCTOR_`    | disabled; no contract                                 |
 | Ambulance | `AMBULANCE_` | disabled; public emergency numbers are not a provider |
+| OSM       | `OSM_`       | Overpass API discovery (hospital/pharmacy, unverified)|
 
 The hospital factory accepts only `HOSPITAL_PROVIDER=disabled`. Any other value logs
 `hospital_provider_not_implemented; staying disabled` and returns the disabled adapter.
 `HOSPITAL_API_URL`, `HOSPITAL_API_KEY` and `HOSPITAL_DATA_MAX_AGE_HOURS` are reserved for
 a future adapter; no current code calls a vendor.
+
+OSM Overpass discovery is available via `GET /v1/osm/hospitals` and
+`GET /v1/osm/pharmacies`. Results are cached in Redis and carry OpenStreetMap
+attribution. All results are `verificationStatus: "unverified"` and must not
+be represented as verified medical facilities.
 
 ## Rules
 
@@ -29,6 +36,7 @@ a future adapter; no current code calls a vendor.
 - Responses carry `source`, `lastSyncedAt` and freshness; unknown values stay unknown.
 - Provider failure returns an explicit unavailable state, never a fallback dataset.
 - Credentials live in server environment only and are never logged.
+- OSM results are never marked verified; bed/ICU availability stays `unknown`.
 
 ## Next step
 

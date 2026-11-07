@@ -24,7 +24,7 @@ erDiagram
         date date_of_birth
         text gender
         text phone "from verified claim only"
-        text preferred_language "en|hi"
+        text preferred_language "en|hi|mr"
         text_array accessibility_preferences
         timestamptz created_at
         timestamptz updated_at

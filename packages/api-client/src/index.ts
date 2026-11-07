@@ -1,10 +1,18 @@
 import {
   API_ROUTES,
+  type AmbulanceEmergencyResponse,
+  type DashboardOverviewResponse,
+  type GeocodeResponse,
   type HealthResponse,
   type HospitalAvailabilityApiResponse,
+  type HospitalDetailApiResponse,
   type MeResponse,
+  type OsmDiscoveryResponse,
   type PatientProfileResponse,
+  type PlacesSearchResponse,
   type ReadinessResponse,
+  type ReverseGeocodeResponse,
+  type RouteResponse,
 } from "@medicare/contracts";
 import type {
   ApiErrorBody,
@@ -114,11 +122,78 @@ export function createApiClient(options: ApiClientOptions) {
           body: JSON.stringify(input),
         }),
     },
-    searchHospitals: (query: HospitalSearchQuery) =>
-      request<HospitalSearchResponse>(`${API_ROUTES.hospitals}?${toQueryString(query)}`),
+    searchHospitals: (query: HospitalSearchQuery, init?: { signal?: AbortSignal }) =>
+      request<HospitalSearchResponse>(`${API_ROUTES.hospitals}?${toQueryString(query)}`, {
+        signal: init?.signal,
+      }),
+    nearbyHospitals: (query: HospitalSearchQuery, init?: { signal?: AbortSignal }) =>
+      request<HospitalSearchResponse>(`${API_ROUTES.hospitalNearby}?${toQueryString(query)}`, {
+        signal: init?.signal,
+      }),
+    hospital: {
+      get: (id: string) => request<HospitalDetailApiResponse>(API_ROUTES.hospital(id)),
+    },
     hospitalAvailability: {
       get: (hospitalId: string) =>
         request<HospitalAvailabilityApiResponse>(API_ROUTES.hospitalAvailability(hospitalId)),
+    },
+    map: {
+      geocode: (address: string) =>
+        request<GeocodeResponse>(`${API_ROUTES.mapGeocode}?${toQueryString({ address })}`),
+      reverseGeocode: (latitude: number, longitude: number) =>
+        request<ReverseGeocodeResponse>(
+          `${API_ROUTES.mapReverseGeocode}?${toQueryString({ latitude, longitude })}`,
+        ),
+      searchPlaces: (params: {
+        query: string;
+        latitude: number;
+        longitude: number;
+        radiusKm?: number;
+        type?: "hospital" | "pharmacy";
+      }) =>
+        request<PlacesSearchResponse>(`${API_ROUTES.mapPlaces}?${toQueryString(params)}`),
+      route: (params: {
+        originLatitude: number;
+        originLongitude: number;
+        destinationLatitude: number;
+        destinationLongitude: number;
+      }) =>
+        request<RouteResponse>(API_ROUTES.mapRoute, {
+          method: "POST",
+          body: JSON.stringify(params),
+        }),
+    },
+    osm: {
+      searchHospitals: (params: {
+        latitude: number;
+        longitude: number;
+        radiusMeters?: number;
+      }) =>
+        request<OsmDiscoveryResponse>(
+          `${API_ROUTES.osmHospitals}?${toQueryString(params)}`,
+        ),
+      searchPharmacies: (params: {
+        latitude: number;
+        longitude: number;
+        radiusMeters?: number;
+      }) =>
+        request<OsmDiscoveryResponse>(
+          `${API_ROUTES.osmPharmacies}?${toQueryString(params)}`,
+        ),
+    },
+    ambulance: {
+      getEmergencyNumbers: () =>
+        request<AmbulanceEmergencyResponse>(API_ROUTES.ambulanceEmergencyNumbers),
+    },
+    dashboard: {
+      overview: (query: {
+        latitude?: number;
+        longitude?: number;
+        radiusKm?: number;
+      }) =>
+        request<DashboardOverviewResponse>(
+          `${API_ROUTES.dashboardOverview}?${toQueryString(query)}`,
+        ),
     },
   };
 }
